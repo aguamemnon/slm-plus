@@ -1,18 +1,32 @@
 <?php
 if (!defined('ABSPATH')) { exit; }
 
+/** Only licensed administrators may edit the catalogue, never authors. */
+function slmms_catalog_capabilities() {
+    $capabilities = array(
+        'edit_posts', 'edit_others_posts', 'edit_published_posts',
+        'edit_private_posts', 'publish_posts', 'read_private_posts',
+        'delete_posts', 'delete_others_posts', 'delete_published_posts',
+        'delete_private_posts', 'create_posts'
+    );
+    return array_fill_keys($capabilities, 'manage_options');
+}
+
 function slmms_register_catalog() {
     register_post_type('slm_software', array(
         'labels' => array('name' => 'Logiciels', 'singular_name' => 'Logiciel', 'add_new_item' => 'Ajouter un logiciel'),
         'public' => false, 'show_ui' => true, 'show_in_menu' => SLM_MAIN_MENU_SLUG,
         'show_in_rest' => false, 'supports' => array('title', 'editor'),
-        'capability_type' => 'post',
+        'capability_type' => 'post', 'map_meta_cap' => true,
+        'capabilities' => slmms_catalog_capabilities(),
         'menu_icon' => 'dashicons-desktop'
     ));
     register_post_type('slm_module', array(
         'labels' => array('name' => 'Modules logiciels', 'singular_name' => 'Module', 'add_new_item' => 'Ajouter un module'),
         'public' => false, 'show_ui' => true, 'show_in_menu' => SLM_MAIN_MENU_SLUG,
-        'supports' => array('title', 'editor'), 'capability_type' => 'post'
+        'supports' => array('title', 'editor'),
+        'capability_type' => 'post', 'map_meta_cap' => true,
+        'capabilities' => slmms_catalog_capabilities()
     ));
 }
 
