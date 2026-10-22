@@ -73,6 +73,9 @@ function slm_remove_additional_info_on_custom_checkout() {
  */
 add_action('woocommerce_order_status_completed', 'slm_process_license_renewal', 10, 1);
 function slm_process_license_renewal($order_id) {
+    // Les nouvelles licences multi-logiciels sont traitées par leur flux payé et idempotent.
+    if (function_exists('slmms_order_contains_managed') &&
+        slmms_order_contains_managed(wc_get_order($order_id))) { return; }
     $renew_license_key = get_post_meta($order_id, '_renew_license_key', true);
 
     if (!empty($renew_license_key)) {
