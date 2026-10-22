@@ -23,6 +23,7 @@ add_action('init', 'slmms_register_catalog');
 add_action('add_meta_boxes', 'slmms_add_catalog_metaboxes');
 add_action('save_post_slm_module', 'slmms_save_module', 10, 2);
 add_action('save_post_slm_software', 'slmms_save_software', 10, 2);
+add_action('admin_init', 'slmms_register_software_list_hooks');
 
 add_action('plugins_loaded', 'slmms_boot_woocommerce', 20);
 // Register after legacy SLM Plus has declared its top-level menu.
