@@ -39,10 +39,12 @@ jobs:
           php -l woocommerce/includes/hooks/license-checkout-hooks.php
           php -l tests/multisoft/license-plan.php
           php -l tests/multisoft/admin-menus.php
+          php -l tests/multisoft/major-versions.php
       - name: Licensing behavior checks
         run: |
           php tests/multisoft/license-plan.php
           php tests/multisoft/admin-menus.php
+          php tests/multisoft/major-versions.php
 
   package:
     name: WordPress test plugin ZIP
