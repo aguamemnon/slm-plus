@@ -33,4 +33,43 @@ $upAndRenew = slmms_compute_entitlement('upgrade', 7, array(15),
     '2027-02-10 00:00:00', 30, 0, array(), $now);
 check_major($upAndRenew['expires_utc'], '2027-03-12 00:00:00',
     'upgrade + prolongation: garder les jours restants');
+
+// Simulated target licence. WooCommerce must refuse cross-major renewals and
+// downgrades BEFORE checkout, then re-check under DB lock after payment.
+require_once dirname(__DIR__, 2) . '/includes/multisoft/class-slmms-woocommerce.php';
+function slmms_owned_license($key, $owner_id = null, $software_id = 0) {
+    if ($key !== 'MS-TESTKEY' || $owner_id !== 42 || $software_id !== 123) {
+        return null;
+    }
+    return $GLOBALS['test_license'];
+}
+$GLOBALS['test_license'] = (object) array(
+    'major_version' => 1, 'status' => 'active',
+    'expires_utc' => '2027-02-10 00:00:00'
+);
+$target = array('mode' => 'upgrade', 'software_id' => 123, 'major' => 2, 'days' => 0);
+check_major(slmms_validate_target($target, 'MS-TESTKEY', 42), true,
+    'panier: upgrade v1 vers v2 autorisé');
+check_major(slmms_validate_target($target, 'MS-TESTKEY', 43), false,
+    'panier: licence d’un autre utilisateur refusée');
+check_major(slmms_validate_target($target, 'MS-TESTKEY', 42) &&
+    !slmms_validate_target($target + array('other' => 'irrelevant'), 'wrong', 42),
+    true, 'panier: validation clé cible');
+$renewV1 = array('mode' => 'renew', 'software_id' => 123, 'major' => 1, 'days' => 365);
+check_major(slmms_validate_target($renewV1, 'MS-TESTKEY', 42), true,
+    'panier: renouvellement v1 autorisé');
+$renewV2 = array('mode' => 'renew', 'software_id' => 123, 'major' => 2, 'days' => 365);
+check_major(slmms_validate_target($renewV2, 'MS-TESTKEY', 42), false,
+    'panier: renouvellement v1 ne peut pas attribuer v2');
+$GLOBALS['test_license']->major_version = 2;
+check_major(slmms_validate_target($target, 'MS-TESTKEY', 42), false,
+    'panier: upgrade v1 vers v2 non rejouable');
+$GLOBALS['test_license']->major_version = 1;
+$GLOBALS['test_license']->expires_utc = '2025-12-31 00:00:00';
+check_major(slmms_validate_target($target, 'MS-TESTKEY', 42), false,
+    'panier: upgrade sans prolongation sur licence expirée refusé');
+$target['days'] = 365;
+check_major(slmms_validate_target($target, 'MS-TESTKEY', 42), true,
+    'panier: upgrade expiré accompagné d’un renouvellement autorisé');
+
 echo "OK: tests de compatibilité des versions et offres upgrade terminés.\n";
