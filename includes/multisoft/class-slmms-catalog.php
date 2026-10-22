@@ -159,6 +159,47 @@ function slmms_software_metabox($post) {
     echo '<p><a class="button" href="' . esc_url(add_query_arg(
         array('post_type' => 'slm_module', 'slmms_software' => $post->ID),
         admin_url('post-new.php'))) . '">Créer un module avec description</a></p>';
+    if (class_exists('WooCommerce')) {
+        echo '<hr /><h3>Offres WooCommerce de ce logiciel</h3>';
+        echo '<p>Les produits ci-dessous peuvent créer, renouveler ou faire évoluer une licence.</p>';
+        $offers = get_posts(array(
+            'post_type' => 'product',
+            'post_status' => array('publish', 'draft', 'pending', 'private'),
+            'numberposts' => 100,
+            'meta_key' => '_slmms_software',
+            'meta_value' => $post->ID,
+            'orderby' => 'title', 'order' => 'ASC'
+        ));
+        if (!$offers) {
+            echo '<p><em>Aucune offre commerciale associée à ce logiciel.</em></p>';
+        } else {
+            echo '<table class="widefat striped"><thead><tr>' .
+                '<th>Produit</th><th>Opération</th><th>Version majeure</th><th>Places</th><th>Durée</th><th>État</th>' .
+                '</tr></thead><tbody>';
+            $modes = array('new' => 'Nouvelle licence', 'renew' => 'Renouvellement',
+                'modules' => 'Module complémentaire', 'renew_modules' => 'Renouvellement + modules',
+                'seats' => 'Places complémentaires', 'upgrade' => 'Mise à niveau majeure');
+            foreach ($offers as $offer) {
+                $operation = get_post_meta($offer->ID, '_slmms_mode', true);
+                $major = (int)get_post_meta($offer->ID, '_slmms_major', true);
+                $valid = slmms_product_offer($offer->ID);
+                echo '<tr><td><a href="' . esc_url(get_edit_post_link($offer->ID)) . '">' .
+                    esc_html($offer->post_title) . '</a></td><td>' .
+                    esc_html(isset($modes[$operation]) ? $modes[$operation] : 'Non configuré') .
+                    '</td><td>' . esc_html($major > 0 ? 'v' . $major . '.x' : '—') .
+                    '</td><td>' . esc_html((string)absint(get_post_meta($offer->ID, '_slmms_seats', true))) .
+                    '</td><td>' . esc_html((string)absint(get_post_meta($offer->ID, '_slmms_days', true)) . ' j') .
+                    '</td><td>' . esc_html($valid ? 'Configurée' : 'À compléter') .
+                    '</td></tr>';
+            }
+            echo '</tbody></table>';
+        }
+        echo '<p><a class="button button-secondary" href="' .
+            esc_url(add_query_arg(array('post_type' => 'product', 'slmms_software' => $post->ID),
+                admin_url('post-new.php'))) .
+            '">Créer une offre pour ce logiciel</a></p>';
+    }
+
 }
 
 function slmms_save_software($post_id, $post) {
@@ -240,9 +281,13 @@ function slmms_product_fields() {
                               'numberposts' => -1)) as $software) {
         $software_options[$software->ID] = $software->post_title;
     }
+    $selected_software = absint(get_post_meta($id, '_slmms_software', true));
+    if (!$selected_software && isset($_GET['slmms_software'])) {
+        $selected_software = absint($_GET['slmms_software']);
+    }
     woocommerce_wp_select(array(
         'id' => '_slmms_software', 'label' => 'Logiciel',
-        'value' => get_post_meta($id, '_slmms_software', true),
+        'value' => $selected_software,
         'options' => $software_options
     ));
     woocommerce_wp_text_input(array(
