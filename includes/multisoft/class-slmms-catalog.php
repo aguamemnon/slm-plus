@@ -138,9 +138,18 @@ function slmms_add_catalog_metaboxes() {
 function slmms_software_metabox($post) {
     wp_nonce_field('slmms_save_software', 'slmms_software_nonce');
     $version = (string)get_post_meta($post->ID, '_slmms_version', true);
-    echo '<p><label for="slmms_version"><strong>Version actuelle (majeure.mineure.correctif)</strong></label><br />';
-    echo '<input id="slmms_version" name="slmms_version" type="text" pattern="[0-9]+\\.[0-9]+(\\.[0-9]+)?" ' .
-        'placeholder="1.0.0" value="' . esc_attr($version) . '" /></p>';
+    echo '<p><label for="slmms_version"><strong>Version actuelle (obligatoire pour les licences)</strong></label><br />';
+    echo '<input id="slmms_version" name="slmms_version" type="text" required ' .
+        'pattern="[1-9][0-9]{0,2}[.](0|[1-9][0-9]{0,3})([.](0|[1-9][0-9]{0,3}))?" ' .
+        'placeholder="Saisir : 1.0.0" value="' . esc_attr($version) . '" />' .
+        '<span class="description" style="display:block;margin-top:5px">' .
+        'Exemple : 1.0.0 (licence v1.x). Enregistre avec « Mettre à jour ».</span></p>';
+    if (slmms_parse_major_version($version) === 0) {
+        echo '<p role="alert" style="border-left:4px solid #dba617;padding:8px 12px;' .
+            'background:#fff8e5"><strong>Aucune version enregistrée pour ce logiciel.</strong> ' .
+            'Le formulaire de licence ne pourra pas le sélectionner tant que la version ' .
+            'n’aura pas été enregistrée.</p>';
+    }
     echo '<p>La licence couvre uniquement sa version majeure. Une licence v1 est renouvelable en v1, ' .
         'ou peut passer vers une v2 avec une offre de mise à niveau WooCommerce.</p>';
 
