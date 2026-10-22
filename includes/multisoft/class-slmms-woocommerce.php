@@ -195,11 +195,13 @@ function slmms_apply_paid_item($order, $item_id, $item) {
         $stamp = $now->format('Y-m-d H:i:s');
         if ($mode === 'new') {
             $license_key = 'MS-' . strtoupper(bin2hex(random_bytes(16)));
-            $expiry = $now->modify('+' . $days . ' days')->format('Y-m-d H:i:s');
+            $plan = slmms_compute_entitlement('new', 0, array(), null,
+                $days, $seats, $modules, $now);
+            $expiry = $plan['expires_utc'];
             if ($wpdb->insert($licenses, array(
                 'license_key' => $license_key, 'owner_id' => $owner,
-                'software_id' => $software, 'seats' => $seats,
-                'modules_json' => wp_json_encode($modules),
+                'software_id' => $software, 'seats' => $plan['seats'],
+                'modules_json' => wp_json_encode($plan['modules']),
                 'expires_utc' => $expiry, 'status' => 'active',
                 'created_utc' => $stamp, 'updated_utc' => $stamp
             )) === false) { throw new RuntimeException('Insertion licence échouée.'); }
@@ -213,22 +215,13 @@ function slmms_apply_paid_item($order, $item_id, $item) {
                 throw new RuntimeException('Licence cible introuvable ou non autorisée.');
             }
             $license_id = (int) $license->id;
-            $new_seats = (int) $license->seats;
-            $new_modules = slmms_modules($license);
-            $expiry = $license->expires_utc;
-            if (in_array($mode, array('modules', 'renew_modules'), true)) {
-                $new_modules = array_values(array_unique(array_merge($new_modules, $modules)));
-            }
-            if ($mode === 'seats') { $new_seats += $seats; }
-            if ($new_seats > 100000) { throw new RuntimeException('Quota maximal dépassé.'); }
-            if (in_array($mode, array('renew', 'renew_modules'), true)) {
-                $previous = new DateTimeImmutable($expiry, new DateTimeZone('UTC'));
-                $anchor = $previous > $now ? $previous : $now;
-                $expiry = $anchor->modify('+' . $days . ' days')->format('Y-m-d H:i:s');
-            }
+            $plan = slmms_compute_entitlement($mode, (int)$license->seats,
+                slmms_modules($license), $license->expires_utc,
+                $days, $seats, $modules, $now);
             if ($wpdb->update($licenses, array(
-                'seats' => $new_seats, 'modules_json' => wp_json_encode($new_modules),
-                'expires_utc' => $expiry, 'updated_utc' => $stamp
+                'seats' => $plan['seats'],
+                'modules_json' => wp_json_encode($plan['modules']),
+                'expires_utc' => $plan['expires_utc'], 'updated_utc' => $stamp
             ), array('id' => $license_id)) === false) {
                 throw new RuntimeException('Mise à jour licence échouée.');
             }
