@@ -46,6 +46,7 @@ function slmms_manual_license_page() {
     }
     echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
     wp_nonce_field('slmms_manual_create');
+    echo '<input type="hidden" name="request_key" value="' . esc_attr(wp_generate_uuid4()) . '" />';
     echo '<input type="hidden" name="action" value="slmms_manual_create" />';
     echo '<table class="form-table"><tbody>';
     echo '<tr><th><label for="slmms_client_email">Client titulaire</label></th><td>' .
@@ -139,8 +140,10 @@ function slmms_manual_license_submit() {
         wp_safe_redirect(add_query_arg('slmms_error', $error, slmms_manual_license_url()));
         exit;
     }
+    $request_key = isset($_POST['request_key']) ?
+        sanitize_text_field(wp_unslash($_POST['request_key'])) : '';
     $id = slmms_manual_license_insert((int)$owner->ID, $software_id,
-        $major, $modules, $seats, $days, get_current_user_id());
+        $major, $modules, $seats, $days, get_current_user_id(), $request_key);
 
     if (!$id) {
         wp_safe_redirect(add_query_arg('slmms_error', 'db', slmms_manual_license_url()));
@@ -156,9 +159,11 @@ function slmms_manual_license_submit() {
  * Insert + audit in a single InnoDB transaction. This does not touch the
  * WooCommerce paid-order ledger: manual issue is an explicit admin action.
  */
-function slmms_manual_license_insert($owner, $software, $major, $modules, $seats, $days, $actor) {
+function slmms_manual_license_insert($owner, $software, $major, $modules, $seats, $days, $actor, $request_key) {
     global $wpdb;
     if (!$actor || !user_can($actor, 'manage_options') ||
+        !is_string($request_key) ||
+        !preg_match('/^[a-f0-9]{8}-(?:[a-f0-9]{4}-){3}[a-f0-9]{12}$/D', $request_key) ||
         slmms_manual_license_validate(get_userdata($owner),
             $software, $major, $modules, $seats, $days)) {
         return 0;
@@ -166,6 +171,16 @@ function slmms_manual_license_insert($owner, $software, $major, $modules, $seats
     if ($wpdb->query('START TRANSACTION') === false) { return 0; }
     try {
         $now = new DateTimeImmutable('now', new DateTimeZone('UTC'));
+        $requests = slmms_table('manual_requests');
+        // The unique request key serializes retries even if two callbacks race.
+        if ($wpdb->insert($requests, array(
+            'request_key' => $request_key,
+            'actor_user_id' => $actor,
+            'license_id' => 0,
+            'created_utc' => $now->format('Y-m-d H:i:s')
+        )) === false) {
+            throw new RuntimeException('Already issued or request ID rejected');
+        }
         $key = 'MS-' . strtoupper(bin2hex(random_bytes(16)));
         $insert = $wpdb->insert(slmms_table('license'), array(
             'license_key' => $key,
@@ -181,7 +196,9 @@ function slmms_manual_license_insert($owner, $software, $major, $modules, $seats
         ));
         if ($insert === false) { throw new RuntimeException('DB insert failed'); }
         $id = (int)$wpdb->insert_id;
-        if (!$id || !slmms_audit($owner, $actor, $id, 'license_manual_created', 0) ||
+        if (!$id || $wpdb->update($requests, array('license_id' => $id),
+            array('request_key' => $request_key, 'actor_user_id' => $actor)) !== 1 ||
+            !slmms_audit($owner, $actor, $id, 'license_manual_created', 0) ||
             $wpdb->query('COMMIT') === false) {
             throw new RuntimeException('DB audit or commit failed');
         }
