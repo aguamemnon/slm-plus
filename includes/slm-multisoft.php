@@ -13,6 +13,7 @@ require_once SLMMS_ROOT . 'class-slmms-plan.php';
 require_once SLMMS_ROOT . 'class-slmms-storage.php';
 require_once SLMMS_ROOT . 'class-slmms-catalog.php';
 require_once SLMMS_ROOT . 'class-slmms-offers.php';
+require_once SLMMS_ROOT . 'class-slmms-overview.php';
 require_once SLMMS_ROOT . 'class-slmms-woocommerce.php';
 require_once SLMMS_ROOT . 'class-slmms-accounts.php';
 
