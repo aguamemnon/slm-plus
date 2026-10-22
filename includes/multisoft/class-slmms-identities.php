@@ -265,6 +265,16 @@ function slmms_confirm_identity_code($beneficiary_id, $claimant_id, $code) {
         if ($used > (int)$license->seats) {
             throw new RuntimeException('Quota de la licence dépassé.');
         }
+        // One portal account may occupy at most ONE named seat per licence.
+        $other = (int)$wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $users
+             WHERE license_id = %d AND identity_wp_user_id = %d
+               AND identity_verified = 1 AND id != %d",
+            $license->id, $claimant_id, $beneficiary_id
+        ));
+        if ($other !== 0) {
+            throw new RuntimeException('Compte portail déjà lié à cette licence.');
+        }
         $updated = $wpdb->update($users, array(
             'identity_verified' => 1,
             'identity_wp_user_id' => (int)$claimant_id,
