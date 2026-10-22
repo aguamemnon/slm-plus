@@ -8,7 +8,7 @@ if (!defined('ABSPATH')) { exit; }
 function slmms_compute_entitlement($mode, $old_seats, $old_modules,
     $old_expiry, $days, $seats, $added_modules, DateTimeImmutable $now) {
 
-    $valid = array('new', 'renew', 'modules', 'renew_modules', 'seats');
+    $valid = array('new', 'renew', 'modules', 'renew_modules', 'seats', 'upgrade');
     if (!in_array($mode, $valid, true) || $days < 0 || $seats < 0 ||
         $days > 36500 || $seats > 100000) {
         throw new InvalidArgumentException('Invalid licensing operation.');
@@ -23,6 +23,15 @@ function slmms_compute_entitlement($mode, $old_seats, $old_modules,
         $new_seats = $seats;
         $modules = array_values(array_unique(array_map('intval', $added_modules)));
         $expiry = $now->modify('+' . $days . ' days')->format('Y-m-d H:i:s');
+    } elseif ($mode === 'upgrade') {
+        // Upgrade v1 -> v2: same license, users/seats retained; optionally
+        // buy modules and/or prolong validity as part of the upgrade offer.
+        $modules = array_values(array_unique(array_merge($modules, $added_modules)));
+        if ($days > 0) {
+            $current = new DateTimeImmutable($old_expiry, new DateTimeZone('UTC'));
+            $from = $current > $now ? $current : $now;
+            $expiry = $from->modify('+' . $days . ' days')->format('Y-m-d H:i:s');
+        }
     } elseif ($mode === 'seats') {
         if ($seats < 1) { throw new InvalidArgumentException('No additional seats.'); }
         $new_seats += $seats;
