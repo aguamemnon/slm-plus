@@ -96,8 +96,14 @@ function slmms_software_list_column($column, $post_id) {
 }
 
 /** Quick Edit's "password", "private" and post date do not apply to licensing. */
+function slmms_software_quick_edit_enabled($enabled, $post_type) {
+    return $post_type === 'slm_software' ? false : $enabled;
+}
+
 function slmms_software_row_actions($actions, $post) {
     if ($post->post_type === 'slm_software') {
+        // WordPress core uses the exact key below; keep fallbacks for older sites.
+        unset($actions['inline hide-if-no-js']);
         unset($actions['inline hide']);
         unset($actions['inline']);
         unset($actions['view']);
@@ -113,6 +119,7 @@ function slmms_software_bulk_actions($actions) {
 function slmms_register_software_list_hooks() {
     add_filter('manage_slm_software_posts_columns', 'slmms_software_list_columns');
     add_action('manage_slm_software_posts_custom_column', 'slmms_software_list_column', 10, 2);
+    add_filter('quick_edit_enabled_for_post_type', 'slmms_software_quick_edit_enabled', 10, 2);
     add_filter('post_row_actions', 'slmms_software_row_actions', 10, 2);
     add_filter('bulk_actions-edit-slm_software', 'slmms_software_bulk_actions');
 }
