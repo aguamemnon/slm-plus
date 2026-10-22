@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) { exit; }
 /** Separate fork tables; never alter SLM Plus legacy primary/foreign keys. */
 function slmms_table($name) {
     global $wpdb;
-    $names = array('license' => 'slmms_licenses', 'users' => 'slmms_users', 'ledger' => 'slmms_order_items');
+    $names = array('license' => 'slmms_licenses', 'users' => 'slmms_users', 'ledger' => 'slmms_order_items', 'managers' => 'slmms_managers', 'audit' => 'slmms_audit');
     if (!isset($names[$name])) { throw new InvalidArgumentException('Unknown table'); }
     return $wpdb->prefix . $names[$name];
 }
@@ -16,6 +16,8 @@ function slmms_install_schema() {
     $licenses = slmms_table('license');
     $users = slmms_table('users');
     $ledger = slmms_table('ledger');
+    $managers = slmms_table('managers');
+    $audit = slmms_table('audit');
 
     dbDelta("CREATE TABLE $licenses (
         id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -61,6 +63,32 @@ function slmms_install_schema() {
         UNIQUE KEY order_item_id (order_item_id),
         KEY license_id (license_id)
     ) $charset;");
+    dbDelta("CREATE TABLE $managers (
+        id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+        owner_id bigint(20) unsigned NOT NULL,
+        manager_user_id bigint(20) unsigned NOT NULL,
+        role varchar(24) NOT NULL DEFAULT 'viewer',
+        active tinyint(1) NOT NULL DEFAULT 1,
+        created_utc datetime NOT NULL,
+        updated_utc datetime NOT NULL,
+        PRIMARY KEY  (id),
+        UNIQUE KEY owner_manager (owner_id,manager_user_id),
+        KEY manager_user_id (manager_user_id)
+    ) $charset;");
+
+    dbDelta("CREATE TABLE $audit (
+        id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+        owner_id bigint(20) unsigned NOT NULL,
+        actor_user_id bigint(20) unsigned NOT NULL,
+        license_id bigint(20) unsigned NOT NULL DEFAULT 0,
+        action varchar(48) NOT NULL,
+        subject_id bigint(20) unsigned NOT NULL DEFAULT 0,
+        occurred_utc datetime NOT NULL,
+        PRIMARY KEY  (id),
+        KEY owner_id (owner_id),
+        KEY license_id (license_id),
+        KEY occurred_utc (occurred_utc)
+    ) $charset;");
     update_option('slmms_schema_version', SLMMS_VERSION);
 }
 
@@ -93,12 +121,9 @@ function slmms_owned_license($license_key, $owner_id = null, $software_id = 0) {
 function slmms_license_for_id($id, $actor_id) {
     global $wpdb;
     $table = slmms_table('license');
-    if (current_user_can('manage_options')) {
-        return $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d", $id));
-    }
-    return $wpdb->get_row($wpdb->prepare(
-        "SELECT * FROM $table WHERE id = %d AND owner_id = %d", $id, $actor_id
-    ));
+    if (!$id || !$actor_id) { return null; }
+    $license = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table WHERE id = %d", $id));
+    return $license && slmms_actor_can($license, $actor_id, 'view') ? $license : null;
 }
 
 function slmms_modules($license) {
