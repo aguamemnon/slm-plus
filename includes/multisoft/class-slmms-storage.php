@@ -22,6 +22,7 @@ function slmms_install_schema() {
         license_key varchar(80) NOT NULL,
         owner_id bigint(20) unsigned NOT NULL,
         software_id bigint(20) unsigned NOT NULL,
+        major_version smallint(5) unsigned NOT NULL DEFAULT 0,
         seats int(11) unsigned NOT NULL,
         modules_json longtext NOT NULL,
         expires_utc datetime NOT NULL,
@@ -108,10 +109,12 @@ function slmms_modules($license) {
 /** Product/module snapshots are always derived server-side; never trust posted prices, modules or seats. */
 function slmms_product_offer($product_id) {
     $mode = get_post_meta($product_id, '_slmms_mode', true);
-    if (!in_array($mode, array('new', 'renew', 'modules', 'renew_modules', 'seats'), true)) { return null; }
+    if (!in_array($mode, array('new', 'renew', 'modules', 'renew_modules', 'seats', 'upgrade'), true)) { return null; }
     $software_id = absint(get_post_meta($product_id, '_slmms_software', true));
+    $major = absint(get_post_meta($product_id, '_slmms_major', true));
     if (!$software_id || get_post_type($software_id) !== 'slm_software' ||
-        get_post_status($software_id) !== 'publish') { return null; }
+        get_post_status($software_id) !== 'publish' ||
+        !slmms_major_is_sellable($software_id, $major)) { return null; }
 
     $modules = get_post_meta($product_id, '_slmms_modules', true);
     if (!is_array($modules)) { $modules = array(); }
@@ -129,5 +132,5 @@ function slmms_product_offer($product_id) {
         (in_array($mode, array('new', 'renew', 'renew_modules'), true) && $days < 1) ||
         (in_array($mode, array('new', 'seats'), true) && $seats < 1) ||
         (in_array($mode, array('modules', 'renew_modules'), true) && !$modules)) { return null; }
-    return compact('mode', 'software_id', 'modules', 'days', 'seats');
+    return compact('mode', 'software_id', 'major', 'modules', 'days', 'seats');
 }
