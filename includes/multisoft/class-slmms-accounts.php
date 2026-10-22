@@ -349,8 +349,7 @@ function slmms_modify_user($license_id, $user_id, $delete, $actor) {
                 // must never mark an identity as verified by itself.
                 $data['identity_verified'] = 0;
             }
-            $data = array_merge(array(), $data)
-            );
+
             if ($current) {
                 $ok = $wpdb->update($user_table, $data,
                     array('id' => $user_id, 'license_id' => $license_id));
