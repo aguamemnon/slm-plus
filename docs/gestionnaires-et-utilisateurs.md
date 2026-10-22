@@ -47,10 +47,22 @@ Une session de logiciel est admise **uniquement** si :
 
 Les informations envoyées au poste client doivent être signées (droits minimaux + expiration + bénéficiaire + appareil) et compatibles avec une fenêtre hors ligne bornée ; une simple clé ou un JSON modifiable ne suffit pas.
 
-## Avancement réel
+## Avancement réel — lot de délégation (6.3.10)
 
-- **Existant en prototype** : CRUD de bénéficiaires sur licence dans l'espace client et l'administration, types OGIPEN/SAM/AD déclaratifs, contrôle propriétaire et quota, transactions.
-- **Non encore opérationnel** : délégation de gestionnaires d'organisation, authentification/liaison cryptographique des identités SAM/AD, contrôle des appareils, tableau unifié et ergonomique, signature, audit complet, API de validation sécurisée.
-- La version actuelle ne prouve **pas encore** l'identité Windows ou AD d'un utilisateur inscrit. Ne pas la considérer comme un système de licences sécurisé en production.
+- **Réalisé en prototype** : CRUD de bénéficiaires, quota contrôlé par transaction, gestionnaires délégués à l'échelle du **portefeuille d'un acheteur WordPress**, liste des bénéficiaires et des licences accessibles, contrôle serveur par permission.
+- Dans **Mon compte → Mes logiciels et licences**, le propriétaire sélectionne une licence puis accorde à un autre **compte WordPress existant** l'un de deux rôles :
+  - **Lecteur** : consulter les licences du même acheteur et leurs bénéficiaires ; **aucune modification**.
+  - **Gestionnaire des utilisateurs** : consulter et ajouter, modifier, désactiver ou supprimer les bénéficiaires dans la limite des places ; pas d'achat, ni de changement de modules, ni de gestion des autres gestionnaires.
+- Le propriétaire ou l'administrateur global peut révoquer immédiatement la délégation. La vérification se fait depuis la base à chaque opération ; aucune confiance dans la présence d'un bouton HTML.
+- L'admin global voit les gestionnaires associés à une licence depuis son détail. Les ajouts/modifications/révocations des gestionnaires et des bénéficiaires écrivent dans **`slmms_audit`** (identifiants et action, sans mots de passe).
+- Le périmètre actuel est **un compte acheteur et toutes les licences qu'il détient**, et **non encore** une entité entreprise multi-acheteurs ou multi-filiales. La séparation interclients est testée.
+- Les gestionnaires ne consomment **pas** une place de licence par leur seul rôle administratif. Un gestionnaire qui utilise le logiciel devra aussi être déclaré bénéficiaire.
+
+### Limites essentielles
+
+- La délégation requiert un **compte WordPress déjà enregistré** ; invitations, rattachement d'entreprises, rôles multi-organisations et délégation d'achat restent à concevoir.
+- **SAM / AD / portail : identification encore déclarative**, sans preuve cryptographique ni liaison à un compte local. Ne jamais donner réellement accès à un logiciel sur la base d'un seul `subject`.
+- L'enrôlement d'un poste, la signature numérique de l'autorisation, la révocation des appareils, la délégation fine « gérer uniquement tels logiciels » et un audit administrateur exhaustif restent à développer.
+- **Ne pas déployer en production** avant une recette WordPress/WooCommerce + données réelles et un audit de sécurité.
 
 **Décision : cette fonction est un bloc obligatoire avant mise en production et ne doit pas disparaître au profit des seuls écrans logiciels / modules / WooCommerce.**
