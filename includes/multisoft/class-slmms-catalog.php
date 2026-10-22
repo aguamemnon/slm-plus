@@ -14,7 +14,19 @@ function slmms_catalog_capabilities() {
 
 function slmms_register_catalog() {
     register_post_type('slm_software', array(
-        'labels' => array('name' => 'Logiciels', 'singular_name' => 'Logiciel', 'add_new_item' => 'Ajouter un logiciel'),
+        'labels' => array(
+            'name' => 'Logiciels',
+            'singular_name' => 'Logiciel',
+            'menu_name' => 'Logiciels',
+            'all_items' => 'Tous les logiciels',
+            'add_new' => 'Ajouter un logiciel',
+            'add_new_item' => 'Ajouter un logiciel',
+            'edit_item' => 'Modifier le logiciel',
+            'new_item' => 'Nouveau logiciel',
+            'view_item' => 'Voir le logiciel',
+            'search_items' => 'Rechercher un logiciel',
+            'not_found' => 'Aucun logiciel trouvé'
+        ),
         'public' => false, 'show_ui' => true, 'show_in_menu' => SLM_MAIN_MENU_SLUG,
         'show_in_rest' => false, 'supports' => array('title', 'editor'),
         'capability_type' => 'post', 'map_meta_cap' => true,
@@ -22,12 +34,88 @@ function slmms_register_catalog() {
         'menu_icon' => 'dashicons-desktop'
     ));
     register_post_type('slm_module', array(
-        'labels' => array('name' => 'Modules logiciels', 'singular_name' => 'Module', 'add_new_item' => 'Ajouter un module'),
-        'public' => false, 'show_ui' => true, 'show_in_menu' => SLM_MAIN_MENU_SLUG,
-        'supports' => array('title', 'editor'),
+        'labels' => array(
+            'name' => 'Modules logiciels',
+            'singular_name' => 'Module',
+            'add_new_item' => 'Ajouter un module',
+            'edit_item' => 'Modifier le module'
+        ),
+        // Modules remain fully editable through links in each software sheet,
+        // without a second, redundant SLM Plus submenu.
+        'public' => false, 'show_ui' => true, 'show_in_menu' => false,
+        'show_in_rest' => false, 'supports' => array('title', 'editor'),
         'capability_type' => 'post', 'map_meta_cap' => true,
         'capabilities' => slmms_catalog_capabilities()
     ));
+}
+
+/** Meaningful information in the software list rather than blog post metadata. */
+function slmms_software_list_columns($columns) {
+    return array(
+        'cb' => '<input type="checkbox" />',
+        'title' => 'Logiciel',
+        'slmms_version' => 'Version actuelle',
+        'slmms_modules' => 'Modules associés',
+        'slmms_licenses' => 'Licences logicielles',
+        'date' => 'Date de modification'
+    );
+}
+
+function slmms_software_list_column($column, $post_id) {
+    if ($column === 'slmms_version') {
+        $version = (string)get_post_meta($post_id, '_slmms_version', true);
+        echo $version !== '' ? esc_html($version) : '<em>Non définie</em>';
+        return;
+    }
+    if ($column === 'slmms_modules') {
+        $modules = get_posts(array(
+            'post_type' => 'slm_module',
+            'post_status' => array('publish', 'draft'),
+            'numberposts' => -1,
+            'orderby' => 'title',
+            'order' => 'ASC',
+            'meta_key' => '_slmms_software',
+            'meta_value' => $post_id
+        ));
+        if (!$modules) {
+            echo '<em>Aucun module</em>';
+            return;
+        }
+        $names = array();
+        foreach ($modules as $module) { $names[] = $module->post_title; }
+        echo esc_html(implode(' · ', $names));
+        return;
+    }
+    if ($column === 'slmms_licenses') {
+        global $wpdb;
+        $table = slmms_table('license');
+        $count = (int)$wpdb->get_var($wpdb->prepare(
+            "SELECT COUNT(*) FROM $table WHERE software_id = %d", $post_id
+        ));
+        echo esc_html((string)$count);
+    }
+}
+
+/** Quick Edit's "password", "private" and post date do not apply to licensing. */
+function slmms_software_row_actions($actions, $post) {
+    if ($post->post_type === 'slm_software') {
+        unset($actions['inline hide']);
+        unset($actions['inline']);
+        unset($actions['view']);
+    }
+    return $actions;
+}
+
+function slmms_software_bulk_actions($actions) {
+    unset($actions['edit']);
+    return $actions;
+}
+
+function slmms_register_software_list_hooks() {
+    add_filter('manage_slm_software_posts_columns', 'slmms_software_list_columns');
+    add_action('manage_slm_software_posts_custom_column', 'slmms_software_list_column', 10, 2);
+    add_filter('post_row_actions', 'slmms_software_row_actions', 10, 2);
+    add_filter('bulk_actions-edit-slm_software', 'slmms_software_bulk_actions');
 }
 
 function slmms_add_catalog_metaboxes() {
