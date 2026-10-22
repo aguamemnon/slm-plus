@@ -30,7 +30,7 @@ class SLM_List_Licenses extends WP_List_Table
     function get_views()
     {
 
-        $base = admin_url('admin.php?page=slm_overview');
+        $base = admin_url('admin.php?page=slm_overview&slmms_view=classic');
         $current = isset($_GET['view']) ? $_GET['view'] : '';
 
         $link_html = '<a href="%s"%s>%s</a>(%s)';
