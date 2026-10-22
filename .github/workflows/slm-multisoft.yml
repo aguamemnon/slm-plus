@@ -1,0 +1,42 @@
+name: SLM Multi-Software checks
+on:
+  push:
+    branches: [feature/multi-software-licensing]
+    paths:
+      - 'includes/multisoft/**'
+      - 'includes/slm-multisoft.php'
+      - 'slm-plus.php'
+      - 'woocommerce/includes/purchase.php'
+      - 'woocommerce/includes/hooks/license-checkout-hooks.php'
+      - 'tests/multisoft/**'
+      - '.github/workflows/slm-multisoft.yml'
+  pull_request:
+    paths:
+      - 'includes/multisoft/**'
+      - 'includes/slm-multisoft.php'
+      - 'tests/multisoft/**'
+      - '.github/workflows/slm-multisoft.yml'
+permissions:
+  contents: read
+jobs:
+  php:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php: ['7.4', '8.2', '8.3']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          coverage: none
+      - name: PHP syntax check
+        run: |
+          php -l slm-plus.php
+          php -l includes/slm-multisoft.php
+          for f in includes/multisoft/*.php; do php -l "$f"; done
+          php -l woocommerce/includes/purchase.php
+          php -l woocommerce/includes/hooks/license-checkout-hooks.php
+          php -l tests/multisoft/license-plan.php
+      - name: Licensing behavior checks
+        run: php tests/multisoft/license-plan.php
