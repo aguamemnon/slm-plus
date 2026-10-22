@@ -15,6 +15,20 @@ function slmms_register_manual_license_page() {
 }
 add_action('admin_post_slmms_manual_create', 'slmms_manual_license_submit');
 
+/**
+ * Display all software entries even if a version has never been saved.
+ * Incomplete or draft software remains visible but cannot be selected.
+ */
+function slmms_manual_software_choice($software) {
+    $major = slmms_software_major($software->ID);
+    $published = $software->post_status === 'publish';
+    $ready = $published && $major > 0;
+    $suffix = !$published ? ' — à publier' :
+        ($major === 0 ? ' — version non renseignée' : ' — v' . $major . '.x');
+    return array('ready' => $ready, 'major' => $major,
+        'label' => $software->post_title . $suffix);
+}
+
 function slmms_manual_license_page() {
     if (!current_user_can('manage_options')) {
         wp_die('Accès interdit.', '', array('response' => 403));
@@ -63,14 +77,11 @@ function slmms_manual_license_page() {
         '<select id="slmms_software" name="software_id" required>' .
         '<option value="">Choisir un logiciel</option>';
     foreach ($software_list as $soft) {
-        $major = slmms_software_major($soft->ID);
-        $published = $soft->post_status === 'publish';
-        $ready = $published && $major > 0;
-        $suffix = !$published ? ' — à publier' :
-            ($major === 0 ? ' — version non renseignée' : ' — v' . $major . '.x');
+        $entry = slmms_manual_software_choice($soft);
         echo '<option value="' . esc_attr($soft->ID) . '" data-major="' .
-            esc_attr($major) . '" ' . ($ready ? '' : 'disabled="disabled"') . '>' .
-            esc_html($soft->post_title . $suffix) . '</option>';
+            esc_attr($entry['major']) . '" ' .
+            ($entry['ready'] ? '' : 'disabled="disabled"') . '>' .
+            esc_html($entry['label']) . '</option>';
     }
     echo '</select>';
     if (!$software_list) {
