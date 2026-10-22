@@ -19,8 +19,13 @@ function slmms_manual_license_page() {
     if (!current_user_can('manage_options')) {
         wp_die('Accès interdit.', '', array('response' => 403));
     }
-    $software_list = get_posts(array('post_type' => 'slm_software', 'post_status' => 'publish',
-        'numberposts' => -1, 'orderby' => 'title', 'order' => 'ASC'));
+    // Do not hide a software merely because its version has not yet been
+    // configured. Show it with an actionable error instead.
+    $software_list = get_posts(array(
+        'post_type' => 'slm_software',
+        'post_status' => array('publish', 'draft', 'private', 'pending'),
+        'numberposts' => -1, 'orderby' => 'title', 'order' => 'ASC'
+    ));
     $modules = get_posts(array('post_type' => 'slm_module', 'post_status' => 'publish',
         'numberposts' => -1, 'orderby' => 'title', 'order' => 'ASC'));
 
@@ -59,12 +64,37 @@ function slmms_manual_license_page() {
         '<option value="">Choisir un logiciel</option>';
     foreach ($software_list as $soft) {
         $major = slmms_software_major($soft->ID);
-        if (!$major) { continue; }
+        $published = $soft->post_status === 'publish';
+        $ready = $published && $major > 0;
+        $suffix = !$published ? ' — à publier' :
+            ($major === 0 ? ' — version non renseignée' : ' — v' . $major . '.x');
         echo '<option value="' . esc_attr($soft->ID) . '" data-major="' .
-            esc_attr($major) . '">' . esc_html($soft->post_title) .
-            ' (version actuelle v' . esc_html($major) . '.x)</option>';
+            esc_attr($major) . '" ' . ($ready ? '' : 'disabled="disabled"') . '>' .
+            esc_html($soft->post_title . $suffix) . '</option>';
     }
-    echo '</select></td></tr>';
+    echo '</select>';
+    if (!$software_list) {
+        echo '<p class="description" style="color:#b32d2e">Aucun logiciel créé. ' .
+            'Commence par SLM Plus → Logiciels → Ajouter un logiciel.</p>';
+    }
+    $unready = array();
+    foreach ($software_list as $soft) {
+        if ($soft->post_status !== 'publish' || !slmms_software_major($soft->ID)) {
+            $unready[] = $soft;
+        }
+    }
+    if ($unready) {
+        echo '<p class="description" style="color:#a45500">Les logiciels ci-dessous ' .
+            'sont affichés mais ne peuvent pas recevoir une licence tant que ' .
+            'leur version n’est pas enregistrée et qu’ils ne sont pas publiés :</p><ul>';
+        foreach ($unready as $soft) {
+            echo '<li><a href="' . esc_url(get_edit_post_link($soft->ID)) . '">' .
+                esc_html($soft->post_title) . ' — renseigner sa version (ex. 1.0.0) ' .
+                'et cliquer sur Mettre à jour</a></li>';
+        }
+        echo '</ul>';
+    }
+    echo '</td></tr>';
     echo '<tr><th><label for="slmms_major">Version majeure</label></th><td>' .
         '<input id="slmms_major" name="major_version" type="number" min="1" max="999" ' .
         'step="1" required style="width:100px" />' .
@@ -93,7 +123,7 @@ function slmms_manual_license_page() {
     echo '<script>(function(){var soft=document.getElementById("slmms_software"),' .
         'major=document.getElementById("slmms_major"),rows=document.querySelectorAll(".slmms-module-option");' .
         'function sync(){var id=soft.value,option=soft.options[soft.selectedIndex];' .
-        'if(option&&option.dataset.major)major.value=option.dataset.major;' .
+        'major.value=option&&Number(option.dataset.major)>0?option.dataset.major:"";' .
         'rows.forEach(function(row){var visible=row.dataset.software===id&&id!=="";' .
         'row.style.display=visible?"block":"none";if(!visible)row.querySelector("input").checked=false;});}' .
         'soft.addEventListener("change",sync);sync();})();</script>';
