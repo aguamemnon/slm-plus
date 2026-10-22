@@ -57,6 +57,14 @@ check_route(isset($vars['software-licenses'], $vars['software-identity']) &&
     $vars['orders'] === 'orders',
     'WC_Query reconnait les deux endpoints sans effacer les routes standard');
 
+$account_menu = slmms_identity_account_menu(slmms_account_menu(array(
+    'dashboard' => 'Tableau de bord',
+    'customer-logout' => 'Se déconnecter'
+)));
+check_route(array_keys($account_menu) === array(
+    'dashboard', 'software-licenses', 'software-identity', 'customer-logout'),
+    'les deux sections sont visibles avant Déconnexion');
+
 check_route(slmms_account_url() ===
     'https://example.test/mon-compte/software-licenses/' &&
     slmms_identity_page_url() ===
