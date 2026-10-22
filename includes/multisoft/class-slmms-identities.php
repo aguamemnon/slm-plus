@@ -199,6 +199,9 @@ function slmms_issue_identity_code($license_id, $beneficiary_id, $actor_id) {
         return 'sent';
     } catch (Throwable $e) {
         $wpdb->query('ROLLBACK');
+        if (defined('SLMMS_TESTING') && SLMMS_TESTING && defined('STDERR')) {
+            fwrite(STDERR, "Test invitation: " . $e->getMessage() . PHP_EOL);
+        }
         return 'error';
     }
 }
