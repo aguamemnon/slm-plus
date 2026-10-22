@@ -159,7 +159,7 @@ function slmms_manual_license_submit() {
 function slmms_manual_license_insert($owner, $software, $major, $modules, $seats, $days, $actor) {
     global $wpdb;
     if (!$actor || !user_can($actor, 'manage_options') ||
-        !slmms_manual_license_validate(get_userdata($owner),
+        slmms_manual_license_validate(get_userdata($owner),
             $software, $major, $modules, $seats, $days)) {
         return 0;
     }
