@@ -48,6 +48,7 @@ jobs:
           php -l tests/multisoft/identity-enrollment.php
           php -l tests/multisoft/manual-license.php
           php -l tests/multisoft/product-types.php
+          php -l tests/multisoft/account-endpoints.php
       - name: Licensing behavior checks
         run: |
           php tests/multisoft/license-plan.php
@@ -57,6 +58,7 @@ jobs:
           php tests/multisoft/identity-enrollment.php
           php tests/multisoft/manual-license.php
           php tests/multisoft/product-types.php
+          php tests/multisoft/account-endpoints.php
 
   package:
     name: WordPress test plugin ZIP
