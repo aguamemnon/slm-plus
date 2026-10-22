@@ -108,6 +108,17 @@ function slmms_render_license_users($license, $admin) {
     foreach ($users as $u) { if ($u->active) { ++$active; } }
     echo '<h3>Utilisateurs — ' . esc_html(get_the_title($license->software_id)) .
         ' (' . esc_html($active) . '/' . esc_html($license->seats) . ')</h3>';
+    $module_names = array();
+    foreach (slmms_modules($license) as $module_id) {
+        if (get_post_type($module_id) === 'slm_module' &&
+            absint(get_post_meta($module_id, '_slmms_software', true)) === (int)$license->software_id) {
+            $module_names[] = get_the_title($module_id);
+        }
+    }
+    echo '<p><strong>Modules souscrits :</strong> ' .
+        esc_html($module_names ? implode(', ', $module_names) : 'Aucun module optionnel') . '</p>';
+    echo '<p><strong>Statut :</strong> ' . esc_html($license->status) .
+        ' &nbsp; <strong>Expiration UTC :</strong> ' . esc_html($license->expires_utc) . '</p>';
     if (isset($_GET['slmms_notice'])) {
         $notice = sanitize_key(wp_unslash($_GET['slmms_notice']));
         echo '<p role="status"><strong>' . esc_html($notice === 'saved' ?
