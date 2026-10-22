@@ -18,6 +18,9 @@ add_action('woocommerce_order_status_completed', 'wc_slm_process_order_completio
 
 
 function wc_slm_process_order_completion($order_id) {
+    // Un produit multi-logiciels suit son propre moteur d'attribution et sa table de journal.
+    if (function_exists('slmms_order_contains_managed') &&
+        slmms_order_contains_managed(wc_get_order($order_id))) { return; }
     global $wpdb;
 
     if (empty($order_id) || !is_numeric($order_id)) {
