@@ -134,11 +134,17 @@ check_access(slmms_modify_manager($license, 10, false) === 'saved', 'ajout gesti
 check_access(slmms_actor_can($license, 30, 'manage_users'), 'gestionnaire peut attribuer sièges');
 check_access(!slmms_actor_can($wpdb->licenses[2], 30, 'view'), 'gestionnaire isolé par client');
 
-$_POST = array('provider' => 'ogipen', 'subject' => 'user-001', 'display_name' => 'Utilisateur 1', 'active' => 1);
+$_POST = array('provider' => 'ogipen', 'subject' => 'user-001',
+    'display_name' => 'Utilisateur 1', 'active' => 1);
+check_access(slmms_modify_user(1, 0, false, 30) === 'error',
+    'compte portail sans e-mail : refus de création');
+$_POST['email'] = 'one@example.test';
 check_access(slmms_modify_user(1, 0, false, 30) === 'saved', 'gestionnaire déclare utilisateur numéro 1');
 $_POST['subject'] = 'user-002';
+$_POST['email'] = 'two@example.test';
 check_access(slmms_modify_user(1, 0, false, 30) === 'saved', 'gestionnaire déclare utilisateur numéro 2');
 $_POST['subject'] = 'user-003';
+$_POST['email'] = 'three@example.test';
 check_access(slmms_modify_user(1, 0, false, 30) === 'error', 'dépassement quota 2/2 refusé');
 check_access(count($wpdb->users) === 2, 'le quota réellement enregistré reste 2');
 
