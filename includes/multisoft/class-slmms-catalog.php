@@ -4,14 +4,14 @@ if (!defined('ABSPATH')) { exit; }
 function slmms_register_catalog() {
     register_post_type('slm_software', array(
         'labels' => array('name' => 'Logiciels', 'singular_name' => 'Logiciel', 'add_new_item' => 'Ajouter un logiciel'),
-        'public' => false, 'show_ui' => true, 'show_in_menu' => true,
+        'public' => false, 'show_ui' => true, 'show_in_menu' => SLM_MAIN_MENU_SLUG,
         'show_in_rest' => false, 'supports' => array('title', 'editor'),
         'capability_type' => 'post',
         'menu_icon' => 'dashicons-desktop'
     ));
     register_post_type('slm_module', array(
         'labels' => array('name' => 'Modules logiciels', 'singular_name' => 'Module', 'add_new_item' => 'Ajouter un module'),
-        'public' => false, 'show_ui' => true, 'show_in_menu' => 'edit.php?post_type=slm_software',
+        'public' => false, 'show_ui' => true, 'show_in_menu' => SLM_MAIN_MENU_SLUG,
         'supports' => array('title', 'editor'), 'capability_type' => 'post'
     ));
 }
