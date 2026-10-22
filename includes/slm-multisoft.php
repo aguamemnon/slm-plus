@@ -13,6 +13,7 @@ require_once SLMMS_ROOT . 'class-slmms-plan.php';
 require_once SLMMS_ROOT . 'class-slmms-storage.php';
 require_once SLMMS_ROOT . 'class-slmms-managers.php';
 require_once SLMMS_ROOT . 'class-slmms-identities.php';
+require_once SLMMS_ROOT . 'class-slmms-endpoints.php';
 require_once SLMMS_ROOT . 'class-slmms-catalog.php';
 require_once SLMMS_ROOT . 'class-slmms-offers.php';
 require_once SLMMS_ROOT . 'class-slmms-overview.php';
@@ -20,7 +21,13 @@ require_once SLMMS_ROOT . 'class-slmms-manual.php';
 require_once SLMMS_ROOT . 'class-slmms-woocommerce.php';
 require_once SLMMS_ROOT . 'class-slmms-accounts.php';
 
-register_activation_hook(SLM_PATH . 'slm-plus.php', 'slmms_install_schema');
+register_activation_hook(SLM_PATH . 'slm-plus.php', 'slmms_activate_multisoftware');
+add_action('admin_init', 'slmms_maybe_refresh_account_endpoints', 40);
+
+function slmms_activate_multisoftware() {
+    slmms_install_schema();
+    slmms_refresh_account_rewrite_rules();
+}
 add_action('admin_init', 'slmms_maybe_upgrade_schema');
 add_action('init', 'slmms_register_catalog');
 add_action('add_meta_boxes', 'slmms_add_catalog_metaboxes');
@@ -35,6 +42,8 @@ add_action('admin_menu', 'slmms_register_manual_license_page', 41);
 
 function slmms_boot_woocommerce() {
     if (!class_exists('WooCommerce')) { return; }
+    // WC_Query must recognize both custom account routes for content rendering.
+    add_filter('woocommerce_get_query_vars', 'slmms_woocommerce_query_vars');
     slmms_register_woocommerce_hooks();
     slmms_register_account_hooks();
     slmms_register_identity_hooks();
