@@ -16,10 +16,11 @@ function slmms_offers_page() {
         return;
     }
 
-    echo '<p>Une offre multi-logiciels se configure sur un <strong>produit simple</strong>, dans son onglet <strong>Général</strong>, ' .
+    echo '<p>Une offre multi-logiciels se configure sur un produit <strong>License product</strong> ou <strong>Produit simple</strong>, dans son onglet <strong>Général</strong>, ' .
         'aux champs <em>Offre logicielle (SLM Multi)</em>, <em>Logiciel</em>, <em>Modules</em>, <em>Places</em> et <em>Durée</em>.</p>';
-    echo '<p><strong>Attention :</strong> le type de produit « Licence logicielle » du SLM Plus d’origine utilise ' .
-        'l’ancien moteur. Pour ce nouveau circuit, choisir <strong>Produit simple</strong>.</p>';
+    echo '<p>Sur un produit <strong>License product</strong>, le choix ' .
+        '<strong>Offre logicielle (SLM Multi)</strong> détermine le moteur utilisé. ' .
+        'Sans cette option, il reste une licence SLM classique.</p>';
     echo '<p><a class="button button-primary" href="' .
         esc_url(admin_url('post-new.php?post_type=product')) .
         '">Créer une offre WooCommerce</a> <a class="button" href="' .
@@ -30,10 +31,7 @@ function slmms_offers_page() {
         'post_status' => array('publish', 'draft', 'pending', 'private'),
         'posts_per_page' => 100,
         'orderby' => 'date',
-        'order' => 'DESC',
-        'meta_query' => array(array(
-            'key' => '_slmms_mode', 'value' => '', 'compare' => '!='
-        ))
+        'order' => 'DESC'
     ));
 
     $labels = array(
@@ -46,25 +44,34 @@ function slmms_offers_page() {
     );
     echo '<table class="widefat striped"><thead><tr><th>Produit WooCommerce</th><th>Logiciel</th>' .
         '<th>Opération</th><th>Places</th><th>Durée (jours)</th><th>Configuration</th></tr></thead><tbody>';
-    if (!$query->have_posts()) {
-        echo '<tr><td colspan="6">Aucune offre multi-logiciels. Crée un produit simple dans WooCommerce.</td></tr>';
-    } else {
-        foreach ($query->posts as $post) {
-            $offer = slmms_product_offer($post->ID);
-            $mode = get_post_meta($post->ID, '_slmms_mode', true);
-            $software_id = absint(get_post_meta($post->ID, '_slmms_software', true));
-            $seats = absint(get_post_meta($post->ID, '_slmms_seats', true));
-            $days = absint(get_post_meta($post->ID, '_slmms_days', true));
-            echo '<tr><td><a href="' . esc_url(get_edit_post_link($post->ID)) . '">' .
-                esc_html(get_the_title($post->ID)) . '</a></td><td>' .
-                esc_html(get_the_title($software_id)) . '</td><td>' .
-                esc_html(isset($labels[$mode]) ? $labels[$mode] : (string)$mode) .
-                '</td><td>' . esc_html($seats) . '</td><td>' . esc_html($days) .
-                '</td><td>' . ($offer ? '<span style="color:green">Valide</span>' :
-                    '<strong style="color:#b32d2e">À corriger</strong>') . '</td></tr>';
-        }
+    $shown = 0;
+    foreach ($query->posts as $post) {
+        $product = wc_get_product($post->ID);
+        $mode = (string)get_post_meta($post->ID, '_slmms_mode', true);
+        $legacy = $product && $product->is_type('slm_license');
+        if (!$legacy && $mode === '') { continue; }
+        ++$shown;
+        $offer = $mode !== '' ? slmms_product_offer($post->ID) : null;
+        $software_id = absint(get_post_meta($post->ID, '_slmms_software', true));
+        $seats = absint(get_post_meta($post->ID, '_slmms_seats', true));
+        $days = absint(get_post_meta($post->ID, '_slmms_days', true));
+        $status = $mode === ''
+            ? '<em>Licence SLM classique (non configurée pour SLM Multi)</em>'
+            : ($offer ? '<strong style="color:#12752a">SLM Multi : valide</strong>'
+                : '<strong style="color:#b32d2e">SLM Multi : à corriger</strong>');
+        echo '<tr><td><a href="' . esc_url(get_edit_post_link($post->ID)) . '">' .
+            esc_html(get_the_title($post->ID)) . '</a></td><td>' .
+            esc_html($software_id ? get_the_title($software_id) : '—') . '</td><td>' .
+            esc_html(isset($labels[$mode]) ? $labels[$mode] : 'Licence classique') .
+            '</td><td>' . esc_html($mode !== '' ? $seats : '—') .
+            '</td><td>' . esc_html($mode !== '' ? $days : '—') .
+            '</td><td>' . $status . '</td></tr>';
     }
-    echo '</tbody></table><p class="description">La liste présente les 100 offres les plus récentes. ' .
-        'Les produits sont modifiés uniquement via leur fiche WooCommerce.</p></div>';
+    if ($shown === 0) {
+        echo '<tr><td colspan="6">Aucune licence ou offre détectée dans les produits récents.</td></tr>';
+    }
+    echo '</tbody></table><p class="description">Cette vue reprend les 100 produits WooCommerce les plus récents ' .
+        'et signale ceux de type License product, même non encore configurés pour SLM Multi. ' .
+        'Les paramètres et les prix se modifient sur leur fiche WooCommerce.</p></div>';
     wp_reset_postdata();
 }
