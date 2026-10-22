@@ -38,6 +38,7 @@ function slm_manage_licenses_menu()
         <a href="<?php echo esc_url(admin_url('admin.php?page=slm_manage_license')); ?>" class="page-title-action aria-button-if-js" role="button" aria-expanded="false"><?php esc_html_e('Add New', 'slm-plus'); ?></a>
 
         <hr class="wp-header-end">
+        <?php if (function_exists('slmms_licenses_overview')) { slmms_licenses_overview(); } ?>
 
         <div id="poststuff">
             <div id="post-body" class="metabox-holder columns-1">
