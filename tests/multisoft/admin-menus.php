@@ -49,9 +49,11 @@ if (!isset($columns['slmms_version'], $columns['slmms_modules'], $columns['slmms
 }
 $software = (object)array('post_type' => 'slm_software');
 $actions = slmms_software_row_actions(
-    array('edit' => 'Modifier', 'inline hide' => 'Modification rapide',
+    array('edit' => 'Modifier', 'inline hide-if-no-js' => 'Modification rapide',
           'view' => 'Voir'), $software);
-if (isset($actions['inline hide'], $actions['view']) || !isset($actions['edit'])) {
+if (isset($actions['inline hide-if-no-js'], $actions['view']) || !isset($actions['edit']) ||
+    slmms_software_quick_edit_enabled(true, 'slm_software') !== false ||
+    slmms_software_quick_edit_enabled(true, 'post') !== true) {
     throw new RuntimeException("Modification rapide WordPress non supprimée.");
 }
 $bulk = slmms_software_bulk_actions(array('edit' => 'Modifier', 'trash' => 'Corbeille'));
