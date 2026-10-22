@@ -184,7 +184,8 @@ function slmms_issue_identity_code($license_id, $beneficiary_id, $actor_id) {
             'Vérification de votre accès logiciel',
             "Un gestionnaire vous a déclaré comme bénéficiaire d'un logiciel.\n" .
             "Connectez-vous à votre compte client WordPress avec cette adresse e-mail.\n" .
-            "Ouvrez la rubrique « Vérifier mon identité logicielle ».\n" .
+            "Ouvrez la rubrique « Vérifier mon identité logicielle » :\n" .
+            slmms_identity_page_url() . "\n" .
             "Code à usage unique (20 minutes) : $code\n\n" .
             "Si vous n'êtes pas à l'origine de cette demande, ignorez cet e-mail.");
         if (!$mail_sent) {
