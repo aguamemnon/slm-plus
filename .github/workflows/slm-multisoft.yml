@@ -44,11 +44,13 @@ jobs:
           php -l tests/multisoft/license-plan.php
           php -l tests/multisoft/admin-menus.php
           php -l tests/multisoft/major-versions.php
+          php -l tests/multisoft/manager-access.php
       - name: Licensing behavior checks
         run: |
           php tests/multisoft/license-plan.php
           php tests/multisoft/admin-menus.php
           php tests/multisoft/major-versions.php
+          php tests/multisoft/manager-access.php
 
   package:
     name: WordPress test plugin ZIP
