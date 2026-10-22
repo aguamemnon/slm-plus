@@ -7,6 +7,9 @@ define('MINUTE_IN_SECONDS', 60);
 
 function add_action() {}
 function wp_salt() { return 'tests-only-secret-key-do-not-ship'; }
+function wc_get_account_endpoint_url($endpoint) {
+    return 'https://example.test/my-account/' . $endpoint . '/';
+}
 function is_email($value) { return filter_var($value, FILTER_VALIDATE_EMAIL) !== false; }
 function slmms_table($name) { return $name === 'license' ? 'test_license' : 'test_users'; }
 function slmms_actor_can($license, $actor, $action) {
