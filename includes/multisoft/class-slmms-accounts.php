@@ -53,8 +53,12 @@ function slmms_account_page() {
 }
 
 function slmms_admin_menu() {
-    add_submenu_page('edit.php?post_type=slm_software', 'Licences multi-logiciels',
+    // SLM Plus is the parent for the software/module custom post types and
+    // management pages. There should be no second top-level "Logiciels".
+    add_submenu_page(SLM_MAIN_MENU_SLUG, 'Licences multi-logiciels',
         'Licences clients', 'manage_options', 'slmms-licenses', 'slmms_admin_page');
+    add_submenu_page(SLM_MAIN_MENU_SLUG, 'Offres WooCommerce',
+        'Offres WooCommerce', 'manage_woocommerce', 'slmms-offers', 'slmms_offers_page');
 }
 
 function slmms_admin_page() {
@@ -73,8 +77,8 @@ function slmms_admin_page() {
             '</code></td><td>' . esc_html($license->seats) .
             '</td><td>' . esc_html($license->expires_utc) .
             '</td><td><a href="' . esc_url(add_query_arg(
-                array('post_type' => 'slm_software', 'page' => 'slmms-licenses',
-                    'license_id' => (int)$license->id), admin_url('edit.php'))) .
+                array('page' => 'slmms-licenses',
+                    'license_id' => (int)$license->id), admin_url('admin.php'))) .
             '">Gérer</a></td></tr>';
     }
     echo '</tbody></table>';
@@ -148,8 +152,8 @@ function slmms_user_form($license, $user, $admin) {
     $id = $user ? (int)$user->id : 0;
     $action = admin_url('admin-post.php');
     $target = $admin
-        ? add_query_arg(array('post_type' => 'slm_software', 'page' => 'slmms-licenses',
-            'license_id' => $license->id), admin_url('edit.php'))
+        ? add_query_arg(array('page' => 'slmms-licenses',
+            'license_id' => $license->id), admin_url('admin.php'))
         : slmms_account_url($license->id);
     echo '<form method="post" action="' . esc_url($action) . '" style="display:inline-block;margin:6px">';
     wp_nonce_field('slmms_user_' . $license->id);
@@ -210,9 +214,9 @@ function slmms_update_license_status() {
     ), array('id' => $id));
     if ($ok === false) { wp_die('Mise à jour du statut impossible.'); }
     wp_safe_redirect(add_query_arg(array(
-        'post_type' => 'slm_software', 'page' => 'slmms-licenses',
+        'page' => 'slmms-licenses',
         'license_id' => $id
-    ), admin_url('edit.php')));
+    ), admin_url('admin.php')));
     exit;
 }
 
@@ -229,8 +233,8 @@ function slmms_handle_user_action() {
     $admin = current_user_can('manage_options') &&
         !empty($_POST['return_admin']);
     $redirect = $admin
-        ? add_query_arg(array('post_type' => 'slm_software', 'page' => 'slmms-licenses',
-            'license_id' => $license_id), admin_url('edit.php'))
+        ? add_query_arg(array('page' => 'slmms-licenses',
+            'license_id' => $license_id), admin_url('admin.php'))
         : slmms_account_url($license_id);
     $notice = slmms_modify_user($license_id, $user_id, $delete, $actor);
     wp_safe_redirect(add_query_arg('slmms_notice', $notice, $redirect));
