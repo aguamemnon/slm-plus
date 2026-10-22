@@ -8,9 +8,10 @@ WordPress. Recette réelle sur site WordPress/WooCommerce requise avant producti
 - **SLM Plus → Logiciels** : entrée principale pour le catalogue.
 - Le menu indépendant **Modules logiciels** est volontairement masqué.
 - Un module reste éditable en cliquant sur son nom depuis **Modifier le logiciel**.
-- **SLM Plus → Gestion des licences** : liste historique conservée et enrichie
-  par la section des licences multi-logiciels, avec version majeure, modules,
-  places occupées et date d'expiration.
+- **SLM Plus → Gestion des licences** : deux onglets intégrés dans
+  le même écran : **Licences logicielles** (version majeure, modules, places
+  occupées et date d'expiration) et **Licences classiques** (ancienne liste
+  et anciens filtres SLM conservés).
 - La page de détail administratif d'une licence multi-logiciels reste accessible
   via le bouton **Ouvrir / utilisateurs** depuis la gestion des licences, mais
   l'entrée redondante **Licences clients** n'est plus visible dans le menu.
