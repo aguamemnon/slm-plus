@@ -25,9 +25,7 @@ function slmms_account_page() {
     global $wpdb;
     $table = slmms_table('license');
     $owner = get_current_user_id();
-    $licenses = $wpdb->get_results($wpdb->prepare(
-        "SELECT * FROM $table WHERE owner_id = %d ORDER BY id DESC LIMIT 200", $owner
-    ));
+    $licenses = slmms_licenses_for_actor($owner);
     echo '<h2>Mes logiciels et licences</h2>';
     if (!$licenses) {
         echo '<p>Aucune licence multi-logiciels associée à ce compte.</p>';
@@ -43,13 +41,15 @@ function slmms_account_page() {
             '</code></td><td>' . esc_html($license->seats) .
             '</td><td>' . esc_html($license->expires_utc) .
             '</td><td><a href="' . esc_url(slmms_account_url($license->id)) .
-            '">Gérer les utilisateurs</a></td></tr>';
+            '">' . esc_html(slmms_actor_can($license, $owner, 'manage_users') ?
+                'Gérer les utilisateurs' : 'Consulter') . '</a></td></tr>';
     }
     echo '</tbody></table>';
     if ($selected) {
         $license = slmms_license_for_id($selected, $owner);
-        if ($license && (int) $license->owner_id === $owner) {
+        if ($license) {
             slmms_render_license_users($license, false);
+            slmms_manager_panel($license, false);
         }
     }
 }
@@ -103,6 +103,7 @@ function slmms_admin_page() {
             }
             echo '</select> <button class="button button-primary" type="submit">Enregistrer le statut</button></form>';
             slmms_render_license_users($license, true);
+            slmms_manager_panel($license, true);
         }
     }
     echo '</div>';
@@ -110,6 +111,7 @@ function slmms_admin_page() {
 
 function slmms_render_license_users($license, $admin) {
     global $wpdb;
+    $can_edit = slmms_actor_can($license, get_current_user_id(), 'manage_users');
     $users_table = slmms_table('users');
     $users = $wpdb->get_results($wpdb->prepare(
         "SELECT * FROM $users_table WHERE license_id = %d ORDER BY id DESC", $license->id
@@ -140,6 +142,9 @@ function slmms_render_license_users($license, $admin) {
             '</strong></p>';
     }
     echo '<p>Les comptes déclarés ici ne reçoivent aucun droit métier : ces droits sont gérés séparément par chaque logiciel.</p>';
+    if (!$can_edit) {
+        echo '<p><strong>Accès en lecture seule :</strong> tu peux consulter les utilisateurs, pas les modifier.</p>';
+    }
     if ($users) {
         echo '<table class="' . ($admin ? 'widefat striped' : 'shop_table') .
             '"><thead><tr><th>Nom</th><th>Identité</th><th>E-mail</th><th>État</th><th>Action</th></tr></thead><tbody>';
@@ -148,13 +153,17 @@ function slmms_render_license_users($license, $admin) {
                 esc_html($u->provider . ' / ' . $u->subject) . '</td><td>' .
                 esc_html($u->email) . '</td><td>' . esc_html($u->active ?
                 'Actif' : 'Suspendu') . '</td><td>';
-            slmms_user_form($license, $u, $admin);
+            if ($can_edit) {
+                slmms_user_form($license, $u, $admin);
+            } else { echo 'Lecture seule'; }
             echo '</td></tr>';
         }
         echo '</tbody></table>';
     }
-    echo '<h4>Déclarer un utilisateur</h4>';
-    slmms_user_form($license, null, $admin);
+    if ($can_edit) {
+        echo '<h4>Déclarer un utilisateur</h4>';
+        slmms_user_form($license, null, $admin);
+    }
 }
 
 function slmms_user_form($license, $user, $admin) {
@@ -261,8 +270,8 @@ function slmms_modify_user($license_id, $user_id, $delete, $actor) {
         $license = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM $license_table WHERE id = %d FOR UPDATE", $license_id
         ));
-        if (!$license || (!$is_admin && (int)$license->owner_id !== (int)$actor)) {
-            throw new RuntimeException('Licence inaccessible.');
+        if (!$license || !slmms_actor_can($license, $actor, 'manage_users')) {
+            throw new RuntimeException('Licence inaccessible ou droit absent.');
         }
         $current = null;
         if ($user_id) {
@@ -277,6 +286,10 @@ function slmms_modify_user($license_id, $user_id, $delete, $actor) {
                 'id' => $user_id, 'license_id' => $license_id
             )) !== 1) {
                 throw new RuntimeException('Suppression refusée.');
+            }
+            if (!slmms_audit($license->owner_id, $actor, $license_id,
+                'beneficiary_deleted', $user_id)) {
+                throw new RuntimeException('Journal de suppression indisponible.');
             }
             $result = 'deleted';
         } else {
@@ -320,6 +333,12 @@ function slmms_modify_user($license_id, $user_id, $delete, $actor) {
             }
             if ($ok === false) {
                 throw new RuntimeException('Identité déjà déclarée ou base indisponible.');
+            }
+            $beneficiary_id = $user_id ? $user_id : (int)$wpdb->insert_id;
+            if (!slmms_audit($license->owner_id, $actor, $license_id,
+                $user_id ? 'beneficiary_updated' : 'beneficiary_added',
+                $beneficiary_id)) {
+                throw new RuntimeException('Journal utilisateur indisponible.');
             }
             $result = 'saved';
         }
