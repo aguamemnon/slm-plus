@@ -39,8 +39,6 @@ function slmms_account_page() {
         echo '<tr><td>' . esc_html(get_the_title($license->software_id)) .
             '</td><td>' . esc_html((int)$license->major_version > 0 ?
                 'v' . $license->major_version . '.x' : 'Version non attribuée') .
-            '</td><td>' . esc_html((int)$license->major_version > 0 ?
-                'v' . $license->major_version . '.x' : 'À attribuer') .
             '</td><td><code>' . esc_html($license->license_key) .
             '</code></td><td>' . esc_html($license->seats) .
             '</td><td>' . esc_html($license->expires_utc) .
@@ -59,8 +57,10 @@ function slmms_account_page() {
 function slmms_admin_menu() {
     // SLM Plus is the parent for the software/module custom post types and
     // management pages. There should be no second top-level "Logiciels".
-    add_submenu_page(SLM_MAIN_MENU_SLUG, 'Licences multi-logiciels',
-        'Licences clients', 'manage_options', 'slmms-licenses', 'slmms_admin_page');
+    // Access via the integrated row in SLM Plus > Gestion des licences.
+    // Keep the detail route registered but do not add a duplicate submenu.
+    add_submenu_page(null, 'Détail de licence logicielle',
+        'Détail de licence', 'manage_options', 'slmms-licenses', 'slmms_admin_page');
     add_submenu_page(SLM_MAIN_MENU_SLUG, 'Offres WooCommerce',
         'Offres WooCommerce', 'manage_woocommerce', 'slmms-offers', 'slmms_offers_page');
 }
@@ -77,6 +77,8 @@ function slmms_admin_page() {
         $owner = get_userdata($license->owner_id);
         echo '<tr><td>' . esc_html($owner ? $owner->user_email : (string)$license->owner_id) .
             '</td><td>' . esc_html(get_the_title($license->software_id)) .
+            '</td><td>' . esc_html((int)$license->major_version > 0 ?
+                'v' . $license->major_version . '.x' : 'Version à attribuer') .
             '</td><td><code>' . esc_html($license->license_key) .
             '</code></td><td>' . esc_html($license->seats) .
             '</td><td>' . esc_html($license->expires_utc) .
