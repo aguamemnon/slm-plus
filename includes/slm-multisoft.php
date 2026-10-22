@@ -5,13 +5,14 @@
  */
 if (!defined('ABSPATH')) { exit; }
 
-define('SLMMS_VERSION', '0.4.0');
+define('SLMMS_VERSION', '0.5.0');
 define('SLMMS_ROOT', __DIR__ . '/multisoft/');
 
 require_once SLMMS_ROOT . 'class-slmms-versions.php';
 require_once SLMMS_ROOT . 'class-slmms-plan.php';
 require_once SLMMS_ROOT . 'class-slmms-storage.php';
 require_once SLMMS_ROOT . 'class-slmms-managers.php';
+require_once SLMMS_ROOT . 'class-slmms-identities.php';
 require_once SLMMS_ROOT . 'class-slmms-catalog.php';
 require_once SLMMS_ROOT . 'class-slmms-offers.php';
 require_once SLMMS_ROOT . 'class-slmms-overview.php';
@@ -34,4 +35,5 @@ function slmms_boot_woocommerce() {
     if (!class_exists('WooCommerce')) { return; }
     slmms_register_woocommerce_hooks();
     slmms_register_account_hooks();
+    slmms_register_identity_hooks();
 }
