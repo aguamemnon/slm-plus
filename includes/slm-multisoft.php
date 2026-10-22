@@ -8,6 +8,7 @@ if (!defined('ABSPATH')) { exit; }
 define('SLMMS_VERSION', '0.1.0');
 define('SLMMS_ROOT', __DIR__ . '/multisoft/');
 
+require_once SLMMS_ROOT . 'class-slmms-plan.php';
 require_once SLMMS_ROOT . 'class-slmms-storage.php';
 require_once SLMMS_ROOT . 'class-slmms-catalog.php';
 require_once SLMMS_ROOT . 'class-slmms-woocommerce.php';
