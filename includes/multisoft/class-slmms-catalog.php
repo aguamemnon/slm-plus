@@ -280,7 +280,7 @@ function slmms_product_fields() {
             'seats' => 'Ajouter des utilisateurs',
             'upgrade' => 'Passage à une nouvelle version majeure'
         ),
-        'description' => 'Sélectionnez un produit simple/virtuel. Les évolutions exigent une licence existante.',
+        'description' => 'Compatible avec « Produit simple » et « License product ». Choisir une offre SLM Multi pour utiliser le nouveau moteur sans émission de licence classique en doublon.',
         'desc_tip' => true
     ));
     $software_options = array('' => 'Choisir un logiciel');
@@ -318,21 +318,32 @@ function slmms_product_fields() {
     ));
     $selected = get_post_meta($id, '_slmms_modules', true);
     if (!is_array($selected)) { $selected = array(); }
-    echo '<p class="form-field"><label>Modules inclus/ajoutés</label>';
-    echo '<span style="display:inline-block;max-width:65%;vertical-align:top">';
+    echo '<p class="form-field slmms-modules-field"><label>Modules inclus ou ajoutés</label>';
+    echo '<span class="slmms-modules-list" style="display:inline-block;vertical-align:top;width:60%;max-width:680px">';
+    $has_modules = false;
     foreach (get_posts(array('post_type' => 'slm_module', 'post_status' => 'publish',
-                              'numberposts' => -1)) as $module) {
+                              'numberposts' => -1, 'orderby' => 'title', 'order' => 'ASC')) as $module) {
         $sid = absint(get_post_meta($module->ID, '_slmms_software', true));
         $software = get_the_title($sid);
-        echo '<label style="display:block"><input type="checkbox" name="_slmms_modules[]" value="' .
-            esc_attr($module->ID) . '" ' . checked(in_array($module->ID, $selected), true, false) .
-            '> ' . esc_html($module->post_title . ' — ' . $software) . '</label>';
+        $has_modules = true;
+        echo '<span style="display:block;clear:both;padding:0 0 8px">' .
+            '<label style="display:inline-flex!important;align-items:center;gap:9px;' .
+            'float:none!important;width:auto!important;margin:0!important;padding:0!important">' .
+            '<input type="checkbox" name="_slmms_modules[]" value="' .
+            esc_attr($module->ID) . '" style="width:auto!important;margin:0!important;float:none!important" ' .
+            checked(in_array($module->ID, $selected), true, false) .
+            ' /> <span>' . esc_html($module->post_title . ' — ' . $software) .
+            '</span></label></span>';
     }
-    echo '</span></p></div>';
+    if (!$has_modules) {
+        echo '<em>Aucun module publié. Ajoute les modules depuis la fiche du logiciel.</em>';
+    }
+    echo '<small style="display:block;margin-top:4px;color:#646970">' .
+        'Les modules doivent appartenir au logiciel choisi.</small></span></p></div>';
 }
 
 function slmms_save_product_fields($product) {
-    if (!$product->is_type('simple')) { return; }
+    if (!$product->is_type('simple') && !$product->is_type('slm_license')) { return; }
     $mode = isset($_POST['_slmms_mode'])
         ? sanitize_key(wp_unslash($_POST['_slmms_mode'])) : '';
     if (!in_array($mode, array('', 'new', 'renew', 'modules', 'renew_modules', 'seats', 'upgrade'), true)) {
