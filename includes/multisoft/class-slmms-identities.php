@@ -45,8 +45,18 @@ function slmms_register_identity_endpoint() {
     add_rewrite_endpoint('software-identity', EP_ROOT | EP_PAGES);
 }
 function slmms_identity_account_menu($items) {
-    $items['software-identity'] = 'Vérifier mon identité logicielle';
-    return $items;
+    // Keep all account tasks above 'Se déconnecter', which should remain last.
+    $ordered = array();
+    foreach ($items as $key => $title) {
+        if ($key === 'customer-logout') {
+            $ordered['software-identity'] = 'Vérifier mon identité logicielle';
+        }
+        $ordered[$key] = $title;
+    }
+    if (!isset($ordered['software-identity'])) {
+        $ordered['software-identity'] = 'Vérifier mon identité logicielle';
+    }
+    return $ordered;
 }
 function slmms_identity_page_url() {
     return wc_get_account_endpoint_url('software-identity');
