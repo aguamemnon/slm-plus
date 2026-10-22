@@ -155,6 +155,13 @@ function slmms_render_license_users($license, $admin) {
             'Utilisateur supprimé.' : 'Modification refusée : vérifiez la licence, les identités et le quota.')) .
             '</strong></p>';
     }
+    if (isset($_GET['slmms_invite_notice'])) {
+        $invite = sanitize_key(wp_unslash($_GET['slmms_invite_notice']));
+        echo '<p role="status"><strong>' . esc_html($invite === 'sent' ?
+            'Code de vérification transmis au service de messagerie.' :
+            'Code non envoyé : utilisateur, licence, délai ou messagerie indisponible.') .
+            '</strong></p>';
+    }
     echo '<p>Les comptes déclarés ici ne reçoivent aucun droit métier : ces droits sont gérés séparément par chaque logiciel.</p>';
     echo '<p><strong>Sécurité :</strong> une identité déclarée n’est pas encore vérifiée. ' .
         'La validation sera effectuée lors d’un enrôlement sécurisé du logiciel (SAM, AD ou compte portail). ' .
@@ -173,6 +180,7 @@ function slmms_render_license_users($license, $admin) {
                 'Actif' : 'Suspendu') . '</td><td>';
             if ($can_edit) {
                 slmms_user_form($license, $u, $admin);
+                slmms_identity_invite_button($license, $u, $admin);
             } else { echo 'Lecture seule'; }
             echo '</td></tr>';
         }
@@ -338,7 +346,8 @@ function slmms_modify_user($license_id, $user_id, $delete, $actor) {
                 throw new RuntimeException('Nombre maximal de places atteint.');
             }
             $identity_changed = !$current || $current->provider !== $provider ||
-                $current->subject !== $subject;
+                $current->subject !== $subject || $current->email !== $email ||
+                ((int)$current->active === 1 && !$active);
             $data = array(
                 'provider' => $provider, 'subject' => $subject,
                 'display_name' => $display, 'email' => $email, 'active' => $active,
@@ -348,6 +357,12 @@ function slmms_modify_user($license_id, $user_id, $delete, $actor) {
                 // Identity edits invalidate any previous proof. The portal UI
                 // must never mark an identity as verified by itself.
                 $data['identity_verified'] = 0;
+                $data['identity_wp_user_id'] = 0;
+                $data['identity_verified_utc'] = null;
+                $data['verification_code_hash'] = '';
+                $data['verification_expires_utc'] = null;
+                $data['verification_sent_utc'] = null;
+                $data['verification_attempts'] = 0;
             }
 
             if ($current) {
