@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) { exit; }
 /** Separate fork tables; never alter SLM Plus legacy primary/foreign keys. */
 function slmms_table($name) {
     global $wpdb;
-    $names = array('license' => 'slmms_licenses', 'users' => 'slmms_users', 'ledger' => 'slmms_order_items', 'managers' => 'slmms_managers', 'audit' => 'slmms_audit');
+    $names = array('license' => 'slmms_licenses', 'users' => 'slmms_users', 'ledger' => 'slmms_order_items', 'managers' => 'slmms_managers', 'audit' => 'slmms_audit', 'manual_requests' => 'slmms_manual_requests');
     if (!isset($names[$name])) { throw new InvalidArgumentException('Unknown table'); }
     return $wpdb->prefix . $names[$name];
 }
@@ -18,6 +18,7 @@ function slmms_install_schema() {
     $ledger = slmms_table('ledger');
     $managers = slmms_table('managers');
     $audit = slmms_table('audit');
+    $manual_requests = slmms_table('manual_requests');
 
     dbDelta("CREATE TABLE $licenses (
         id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -95,6 +96,18 @@ function slmms_install_schema() {
         KEY owner_id (owner_id),
         KEY license_id (license_id),
         KEY occurred_utc (occurred_utc)
+    ) $charset;");
+    // POST idempotency: one administrator form submission creates at most
+    // one software license, including simultaneous browser retries.
+    dbDelta("CREATE TABLE $manual_requests (
+        id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+        request_key varchar(36) NOT NULL,
+        actor_user_id bigint(20) unsigned NOT NULL,
+        license_id bigint(20) unsigned NOT NULL DEFAULT 0,
+        created_utc datetime NOT NULL,
+        PRIMARY KEY  (id),
+        UNIQUE KEY request_key (request_key),
+        KEY license_id (license_id)
     ) $charset;");
     update_option('slmms_schema_version', SLMMS_VERSION);
 }
