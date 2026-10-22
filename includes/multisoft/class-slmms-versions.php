@@ -29,6 +29,11 @@ function slmms_major_is_sellable($software_id, $major) {
     return $current >= 1 && $major >= 1 && $major <= $current;
 }
 
+function slmms_can_upgrade_major($source_major, $target_major) {
+    return (int)$source_major >= 1 && (int)$target_major > (int)$source_major &&
+        (int)$target_major <= 999;
+}
+
 function slmms_same_major($license_major, $offer_major) {
     return (int)$license_major >= 1 && (int)$license_major === (int)$offer_major;
 }
