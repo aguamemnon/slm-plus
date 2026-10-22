@@ -49,7 +49,8 @@ function slmms_audit($owner_id, $actor_id, $license_id, $action, $subject_id) {
     global $wpdb;
     if (!in_array($action, array(
         'manager_added', 'manager_updated', 'manager_revoked',
-        'beneficiary_added', 'beneficiary_updated', 'beneficiary_deleted'
+        'beneficiary_added', 'beneficiary_updated', 'beneficiary_deleted',
+        'identity_invited', 'identity_verified'
     ), true)) { return false; }
     return $wpdb->insert(slmms_table('audit'), array(
         'owner_id' => (int)$owner_id, 'actor_user_id' => (int)$actor_id,
