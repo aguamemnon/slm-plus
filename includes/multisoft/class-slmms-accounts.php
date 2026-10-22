@@ -37,6 +37,10 @@ function slmms_account_page() {
     echo '<table class="shop_table"><thead><tr><th>Logiciel</th><th>Version majeure</th><th>Licence</th><th>Places</th><th>Expiration UTC</th><th>Actions</th></tr></thead><tbody>';
     foreach ($licenses as $license) {
         echo '<tr><td>' . esc_html(get_the_title($license->software_id)) .
+            '</td><td>' . esc_html((int)$license->major_version > 0 ?
+                'v' . $license->major_version . '.x' : 'Version non attribuée') .
+            '</td><td>' . esc_html((int)$license->major_version > 0 ?
+                'v' . $license->major_version . '.x' : 'À attribuer') .
             '</td><td><code>' . esc_html($license->license_key) .
             '</code></td><td>' . esc_html($license->seats) .
             '</td><td>' . esc_html($license->expires_utc) .
@@ -68,7 +72,7 @@ function slmms_admin_page() {
     $selected = isset($_GET['license_id']) ? absint($_GET['license_id']) : 0;
     echo '<div class="wrap"><h1>Licences multi-logiciels</h1>';
     $licenses = $wpdb->get_results("SELECT * FROM $table ORDER BY id DESC LIMIT 200");
-    echo '<table class="widefat striped"><thead><tr><th>Entreprise / acheteur</th><th>Logiciel</th><th>Licence</th><th>Places</th><th>Validité</th><th>Action</th></tr></thead><tbody>';
+    echo '<table class="widefat striped"><thead><tr><th>Entreprise / acheteur</th><th>Logiciel</th><th>Version</th><th>Licence</th><th>Places</th><th>Validité</th><th>Action</th></tr></thead><tbody>';
     foreach ($licenses as $license) {
         $owner = get_userdata($license->owner_id);
         echo '<tr><td>' . esc_html($owner ? $owner->user_email : (string)$license->owner_id) .
@@ -121,6 +125,9 @@ function slmms_render_license_users($license, $admin) {
     }
     echo '<p><strong>Modules souscrits :</strong> ' .
         esc_html($module_names ? implode(', ', $module_names) : 'Aucun module optionnel') . '</p>';
+    echo '<p><strong>Version majeure de licence :</strong> ' .
+        esc_html((int)$license->major_version > 0 ?
+            'v' . $license->major_version . '.x' : 'À attribuer') . '</p>';
     echo '<p><strong>Statut :</strong> ' . esc_html($license->status) .
         ' &nbsp; <strong>Expiration UTC :</strong> ' . esc_html($license->expires_utc) . '</p>';
     if (isset($_GET['slmms_notice'])) {
