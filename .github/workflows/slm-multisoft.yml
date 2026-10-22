@@ -6,6 +6,8 @@ on:
       - 'includes/multisoft/**'
       - 'includes/slm-multisoft.php'
       - 'slm-plus.php'
+      - 'admin/slm-manage-licenses.php'
+      - 'admin/slm-list-licenses-class.php'
       - 'woocommerce/includes/purchase.php'
       - 'woocommerce/includes/hooks/license-checkout-hooks.php'
       - 'tests/multisoft/**'
@@ -33,6 +35,8 @@ jobs:
       - name: PHP syntax check
         run: |
           php -l slm-plus.php
+          php -l admin/slm-manage-licenses.php
+          php -l admin/slm-list-licenses-class.php
           php -l includes/slm-multisoft.php
           for f in includes/multisoft/*.php; do php -l "$f"; done
           php -l woocommerce/includes/purchase.php
