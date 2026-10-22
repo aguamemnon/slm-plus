@@ -25,17 +25,37 @@ require_once dirname(__DIR__, 2) . '/includes/multisoft/class-slmms-accounts.php
 slmms_register_catalog();
 slmms_admin_menu();
 
-foreach (array('slm_software', 'slm_module') as $type) {
-    if (!isset($slmms_test_posts[$type]) ||
-        $slmms_test_posts[$type]['show_in_menu'] !== SLM_MAIN_MENU_SLUG ||
-        $slmms_test_posts[$type]['capabilities']['edit_posts'] !== 'manage_options') {
-        throw new RuntimeException("Catalogue non inclus dans SLM Plus ou insuffisamment protégé : $type");
-    }
+if (!isset($slmms_test_posts['slm_software']) ||
+    $slmms_test_posts['slm_software']['show_in_menu'] !== SLM_MAIN_MENU_SLUG ||
+    $slmms_test_posts['slm_software']['capabilities']['edit_posts'] !== 'manage_options') {
+    throw new RuntimeException("La fiche logiciel doit rester dans SLM Plus et réservée aux admins.");
 }
-foreach (array('slmms-licenses', 'slmms-offers') as $page) {
-    if (!isset($slmms_test_menus[$page]) ||
-        $slmms_test_menus[$page]['parent'] !== SLM_MAIN_MENU_SLUG) {
-        throw new RuntimeException("Sous-menu SLM Plus manquant : $page");
-    }
+if (!isset($slmms_test_posts['slm_module']) ||
+    $slmms_test_posts['slm_module']['show_in_menu'] !== false ||
+    $slmms_test_posts['slm_module']['show_ui'] !== true ||
+    $slmms_test_posts['slm_module']['capabilities']['edit_posts'] !== 'manage_options') {
+    throw new RuntimeException("Module éditable depuis le logiciel, sans menu séparé.");
 }
-echo "OK: menus SLM Plus logiciels, modules, licences clients, offres WooCommerce." . PHP_EOL;
+if (!isset($slmms_test_menus['slmms-licenses']) ||
+    $slmms_test_menus['slmms-licenses']['parent'] !== null ||
+    !isset($slmms_test_menus['slmms-offers']) ||
+    $slmms_test_menus['slmms-offers']['parent'] !== SLM_MAIN_MENU_SLUG) {
+    throw new RuntimeException("Écrans admin: intégration dans les licences SLM Plus incorrecte.");
+}
+$columns = slmms_software_list_columns(array('date' => 'Date', 'title' => 'Titre'));
+if (!isset($columns['slmms_version'], $columns['slmms_modules'], $columns['slmms_licenses']) ||
+    isset($columns['date'])) {
+    throw new RuntimeException("Liste logiciels: colonnes version/modules/licences incorrectes.");
+}
+$software = (object)array('post_type' => 'slm_software');
+$actions = slmms_software_row_actions(
+    array('edit' => 'Modifier', 'inline hide' => 'Modification rapide',
+          'view' => 'Voir'), $software);
+if (isset($actions['inline hide'], $actions['view']) || !isset($actions['edit'])) {
+    throw new RuntimeException("Modification rapide WordPress non supprimée.");
+}
+$bulk = slmms_software_bulk_actions(array('edit' => 'Modifier', 'trash' => 'Corbeille'));
+if (isset($bulk['edit']) || !isset($bulk['trash'])) {
+    throw new RuntimeException("Modification rapide groupée encore présente.");
+}
+echo "OK: catalogue SLM Plus sans menu Modules, sans Quick Edit, colonnes métier." . PHP_EOL;
