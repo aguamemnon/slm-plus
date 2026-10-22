@@ -263,7 +263,6 @@ function slmms_modify_user($license_id, $user_id, $delete, $actor) {
     global $wpdb;
     $license_table = slmms_table('license');
     $user_table = slmms_table('users');
-    $is_admin = current_user_can('manage_options');
     if ($wpdb->query('START TRANSACTION') === false) { return 'error'; }
     try {
         // Serialize seat allocation for all admins/customers of one license.
@@ -307,7 +306,9 @@ function slmms_modify_user($license_id, $user_id, $delete, $actor) {
                 strlen($subject) > 191 || strlen($display) > 191) {
                 throw new RuntimeException('Identité invalide.');
             }
-            if ($active && !$is_admin && ($license->status !== 'active' ||
+            // Even an administrator cannot quietly add active seats to a
+            // suspended, blocked or expired contract.
+            if ($active && ($license->status !== 'active' ||
                 strtotime($license->expires_utc . ' UTC') <= time())) {
                 throw new RuntimeException('Licence expirée ou suspendue.');
             }
