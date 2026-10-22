@@ -45,6 +45,7 @@ function slmms_install_schema() {
         display_name varchar(191) NOT NULL,
         email varchar(191) NOT NULL DEFAULT '',
         active tinyint(1) NOT NULL DEFAULT 1,
+        identity_verified tinyint(1) NOT NULL DEFAULT 0,
         created_utc datetime NOT NULL,
         updated_utc datetime NOT NULL,
         PRIMARY KEY  (id),
