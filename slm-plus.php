@@ -69,6 +69,9 @@ if (file_exists(SLM_LIB . 'slm-plugin-core.php')) {
     require_once SLM_LIB . 'slm-plugin-core.php';
 }
 
+// Fork: catalogues logiciels/modules, commandes à licence évolutive et utilisateurs nominatifs.
+require_once SLM_LIB . 'slm-multisoft.php';
+
 // Add settings link to plugin action links
 function slm_settings_link($links) {
     $settings_link = '<a href="' . esc_url(admin_url('admin.php?page=slm_settings')) . '">' . __('Settings', 'slm-plus') . '</a>';
