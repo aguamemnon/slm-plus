@@ -21,6 +21,9 @@ function slmms_licenses_overview() {
 
     echo '<section class="slmms-dashboard" style="margin:20px 0 25px">';
     echo '<h2>Licences logicielles et versions majeures</h2>';
+    echo '<p><a class="button button-primary" href="' .
+        esc_url(slmms_manual_license_url()) . '">Créer une licence logicielle</a> ' .
+        '<span class="description">Attribution manuelle administrateur, sans commande WooCommerce.</span></p>';
     echo '<p>Gestion unifiée du portefeuille SLM Plus. Les licences classiques restent affichées en dessous. ' .
         'Les nouveaux contrats multi-logiciels affichent leurs modules, versions et utilisateurs.</p>';
     echo '<div style="display:flex;gap:10px;flex-wrap:wrap;margin:15px 0">';
