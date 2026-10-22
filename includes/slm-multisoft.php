@@ -5,7 +5,7 @@
  */
 if (!defined('ABSPATH')) { exit; }
 
-define('SLMMS_VERSION', '0.5.0');
+define('SLMMS_VERSION', '0.6.0');
 define('SLMMS_ROOT', __DIR__ . '/multisoft/');
 
 require_once SLMMS_ROOT . 'class-slmms-versions.php';
