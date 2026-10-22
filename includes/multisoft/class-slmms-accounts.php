@@ -34,7 +34,7 @@ function slmms_account_page() {
         return;
     }
     $selected = isset($_GET['slmms_license']) ? absint($_GET['slmms_license']) : 0;
-    echo '<table class="shop_table"><thead><tr><th>Logiciel</th><th>Licence</th><th>Places</th><th>Expiration UTC</th><th>Actions</th></tr></thead><tbody>';
+    echo '<table class="shop_table"><thead><tr><th>Logiciel</th><th>Version majeure</th><th>Licence</th><th>Places</th><th>Expiration UTC</th><th>Actions</th></tr></thead><tbody>';
     foreach ($licenses as $license) {
         echo '<tr><td>' . esc_html(get_the_title($license->software_id)) .
             '</td><td><code>' . esc_html($license->license_key) .
