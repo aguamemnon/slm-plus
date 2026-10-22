@@ -61,7 +61,8 @@ Les informations envoyées au poste client doivent être signées (droits minima
 ### Limites essentielles
 
 - La délégation requiert un **compte WordPress déjà enregistré** ; invitations, rattachement d'entreprises, rôles multi-organisations et délégation d'achat restent à concevoir.
-- **SAM / AD / portail : identification encore déclarative**, sans preuve cryptographique ni liaison à un compte local. Ne jamais donner réellement accès à un logiciel sur la base d'un seul `subject`.
+- **Comptes du portail (6.3.12)** : une vérification nominative existe désormais par code à usage unique envoyé à l'adresse e-mail, confirmé par le **compte WordPress du bénéficiaire**. Elle relie la place à l'identifiant WordPress et marque le bénéficiaire comme vérifié ; voir [enrôlement du compte portail](enrolement-identite-portail.md). Elle ne délivre pas encore une licence client utilisable.
+- **SAM / AD** : identification toujours déclarative, sans preuve cryptographique du compte local/domaine ; ils restent non vérifiés. Ne jamais donner réellement accès à un logiciel sur la base d'un seul `subject`.
 - L'enrôlement d'un poste, la signature numérique de l'autorisation, la révocation des appareils, la délégation fine « gérer uniquement tels logiciels » et un audit administrateur exhaustif restent à développer.
 - **Ne pas déployer en production** avant une recette WordPress/WooCommerce + données réelles et un audit de sécurité.
 
