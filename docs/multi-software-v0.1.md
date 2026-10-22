@@ -15,9 +15,21 @@ installer directement sur le site de production.**
 
 ## 1. Gestion des logiciels et modules
 
-Back-office WordPress :
-- **Logiciels** → Ajouter un logiciel (type `slm_software`).
-- **Logiciels > Modules logiciels** → Ajouter un module lié à un logiciel parent.
+Back-office WordPress après le correctif **SLM Plus Multi-Software v6.3.7** :
+- **SLM Plus > Logiciels** → Ajouter un logiciel (type `slm_software`).
+- **SLM Plus > Modules logiciels** → Ajouter un module lié à un logiciel parent.
+- **SLM Plus > Licences clients** → consulter les licences multi-logiciels, contrôler les utilisateurs et les statuts.
+- **SLM Plus > Offres WooCommerce** → voir les produits configurés et ouvrir le formulaire de création WooCommerce.
+
+Si un ancien ZIP est encore actif, les pages du catalogue restent accessibles via
+`/wp-admin/edit.php?post_type=slm_software` et
+`/wp-admin/edit.php?post_type=slm_module`. Si elles n'existent pas,
+vérifier dans **Extensions** que le fork Multi-Software est réellement actif.
+
+**Important :** dans WooCommerce le type « Licence logicielle » de SLM Plus
+existe depuis le plugin original ; la v0.1 multi-logiciels utilise un
+**Produit simple** avec les champs spécifiques sous **Données produit > Général**.
+Cette distinction sera améliorée dans une prochaine version.
 - Les modules sont des identifiants indépendants du nom affiché. Un module
   ne peut pas être attribué à une licence d'un autre logiciel.
 
@@ -90,7 +102,7 @@ métier `progelec` pour OGIPEN.
 
 ## 4. Gestion administrative
 
-**Logiciels > Licences clients** :
+**SLM Plus > Licences clients** :
 - consulter les licences, logiciels, propriétaires, places et dates ;
 - gérer les utilisateurs attachés à chaque licence ;
 - activer, suspendre ou bloquer une licence ;
