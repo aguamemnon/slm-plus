@@ -156,15 +156,19 @@ function slmms_render_license_users($license, $admin) {
             '</strong></p>';
     }
     echo '<p>Les comptes déclarés ici ne reçoivent aucun droit métier : ces droits sont gérés séparément par chaque logiciel.</p>';
+    echo '<p><strong>Sécurité :</strong> une identité déclarée n’est pas encore vérifiée. ' .
+        'La validation sera effectuée lors d’un enrôlement sécurisé du logiciel (SAM, AD ou compte portail). ' .
+        'Aucune identité non vérifiée ne doit recevoir un jeton d’accès.</p>';
     if (!$can_edit) {
         echo '<p><strong>Accès en lecture seule :</strong> tu peux consulter les utilisateurs, pas les modifier.</p>';
     }
     if ($users) {
         echo '<table class="' . ($admin ? 'widefat striped' : 'shop_table') .
-            '"><thead><tr><th>Nom</th><th>Identité</th><th>E-mail</th><th>État</th><th>Action</th></tr></thead><tbody>';
+            '"><thead><tr><th>Nom</th><th>Identité</th><th>Vérification</th><th>E-mail</th><th>État</th><th>Action</th></tr></thead><tbody>';
         foreach ($users as $u) {
             echo '<tr><td>' . esc_html($u->display_name) . '</td><td>' .
                 esc_html($u->provider . ' / ' . $u->subject) . '</td><td>' .
+                esc_html(!empty($u->identity_verified) ? 'Identité vérifiée' : 'En attente de vérification') . '</td><td>' .
                 esc_html($u->email) . '</td><td>' . esc_html($u->active ?
                 'Actif' : 'Suspendu') . '</td><td>';
             if ($can_edit) {
@@ -333,10 +337,19 @@ function slmms_modify_user($license_id, $user_id, $delete, $actor) {
             if ($active && $count >= (int)$license->seats) {
                 throw new RuntimeException('Nombre maximal de places atteint.');
             }
+            $identity_changed = !$current || $current->provider !== $provider ||
+                $current->subject !== $subject;
             $data = array(
                 'provider' => $provider, 'subject' => $subject,
                 'display_name' => $display, 'email' => $email, 'active' => $active,
                 'updated_utc' => gmdate('Y-m-d H:i:s')
+            );
+            if ($identity_changed) {
+                // Identity edits invalidate any previous proof. The portal UI
+                // must never mark an identity as verified by itself.
+                $data['identity_verified'] = 0;
+            }
+            $data = array_merge(array(), $data)
             );
             if ($current) {
                 $ok = $wpdb->update($user_table, $data,
