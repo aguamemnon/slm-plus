@@ -11,6 +11,7 @@ define('SLMMS_ROOT', __DIR__ . '/multisoft/');
 require_once SLMMS_ROOT . 'class-slmms-plan.php';
 require_once SLMMS_ROOT . 'class-slmms-storage.php';
 require_once SLMMS_ROOT . 'class-slmms-catalog.php';
+require_once SLMMS_ROOT . 'class-slmms-offers.php';
 require_once SLMMS_ROOT . 'class-slmms-woocommerce.php';
 require_once SLMMS_ROOT . 'class-slmms-accounts.php';
 
@@ -21,7 +22,8 @@ add_action('add_meta_boxes', 'slmms_add_catalog_metaboxes');
 add_action('save_post_slm_module', 'slmms_save_module', 10, 2);
 
 add_action('plugins_loaded', 'slmms_boot_woocommerce', 20);
-add_action('admin_menu', 'slmms_admin_menu');
+// Register after legacy SLM Plus has declared its top-level menu.
+add_action('admin_menu', 'slmms_admin_menu', 40);
 
 function slmms_boot_woocommerce() {
     if (!class_exists('WooCommerce')) { return; }
