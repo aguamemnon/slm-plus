@@ -10,8 +10,18 @@ function slmms_register_account_endpoint() {
     add_rewrite_endpoint('software-licenses', EP_ROOT | EP_PAGES);
 }
 function slmms_account_menu($items) {
-    $items['software-licenses'] = 'Mes logiciels et licences';
-    return $items;
+    // Keep all account tasks above 'Se déconnecter', which should remain last.
+    $ordered = array();
+    foreach ($items as $key => $title) {
+        if ($key === 'customer-logout') {
+            $ordered['software-licenses'] = 'Mes logiciels et licences';
+        }
+        $ordered[$key] = $title;
+    }
+    if (!isset($ordered['software-licenses'])) {
+        $ordered['software-licenses'] = 'Mes logiciels et licences';
+    }
+    return $ordered;
 }
 function slmms_account_url($license_id = 0) {
     $base = function_exists('wc_get_account_endpoint_url')
