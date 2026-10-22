@@ -16,6 +16,7 @@ require_once SLMMS_ROOT . 'class-slmms-identities.php';
 require_once SLMMS_ROOT . 'class-slmms-catalog.php';
 require_once SLMMS_ROOT . 'class-slmms-offers.php';
 require_once SLMMS_ROOT . 'class-slmms-overview.php';
+require_once SLMMS_ROOT . 'class-slmms-manual.php';
 require_once SLMMS_ROOT . 'class-slmms-woocommerce.php';
 require_once SLMMS_ROOT . 'class-slmms-accounts.php';
 
@@ -30,6 +31,7 @@ add_action('admin_init', 'slmms_register_software_list_hooks');
 add_action('plugins_loaded', 'slmms_boot_woocommerce', 20);
 // Register after legacy SLM Plus has declared its top-level menu.
 add_action('admin_menu', 'slmms_admin_menu', 40);
+add_action('admin_menu', 'slmms_register_manual_license_page', 41);
 
 function slmms_boot_woocommerce() {
     if (!class_exists('WooCommerce')) { return; }
