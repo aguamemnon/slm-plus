@@ -20,7 +20,7 @@ function slmms_order_contains_managed($order) {
     if (!$order) { return false; }
     foreach ($order->get_items('line_item') as $item) {
         if ($item->get_meta('_slmms_mode', true) ||
-            (slmms_product_offer($item->get_product_id()) !== null)) { return true; }
+            get_post_meta($item->get_product_id(), '_slmms_mode', true)) { return true; }
     }
     return false;
 }
@@ -46,6 +46,12 @@ function slmms_validate_target($offer, $key, $owner_id) {
 
 function slmms_validate_add_to_cart($passed, $product_id, $quantity, $variation_id = 0, $cart_item_data = array()) {
     $offer = slmms_product_offer($product_id);
+    // Fail closed for a malformed multi-software product instead of charging
+    // the buyer without generating their entitled licence.
+    if (!$offer && get_post_meta($product_id, '_slmms_mode', true)) {
+        wc_add_notice('La configuration de ce produit logiciel est incomplète.', 'error');
+        return false;
+    }
     if (!$offer) { return $passed; }
     if (!is_user_logged_in()) {
         wc_add_notice('Connectez-vous pour attribuer une licence à votre compte client.', 'error');
@@ -53,7 +59,7 @@ function slmms_validate_add_to_cart($passed, $product_id, $quantity, $variation_
     }
     // One operation per order in v0.1: prevents cross-product legacy hooks
     // and makes licenses and renewals deterministic.
-    if ($quantity !== 1 || (WC()->cart && !WC()->cart->is_empty())) {
+    if ((int)$quantity !== 1 || (WC()->cart && !WC()->cart->is_empty())) {
         wc_add_notice('Placez une seule offre logicielle par commande.', 'error');
         return false;
     }
