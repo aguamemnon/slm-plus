@@ -8,6 +8,9 @@ function get_post_type($id) {
     return $id === 10 ? 'slm_software' : (in_array($id, array(20, 21, 30), true) ? 'slm_module' : '');
 }
 function get_post_status($id) { return 'publish'; }
+function slmms_software_major($id) {
+    return $id === 10 ? 2 : 0;
+}
 function slmms_major_is_sellable($software_id, $major) {
     return $software_id === 10 && $major >= 1 && $major <= 2;
 }
@@ -76,6 +79,24 @@ class ManualDbFake {
 }
 $GLOBALS['wpdb'] = new ManualDbFake();
 require_once dirname(__DIR__, 2) . '/includes/multisoft/class-slmms-manual.php';
+
+$ready = slmms_manual_software_choice((object)array(
+    'ID' => 10, 'post_status' => 'publish', 'post_title' => 'Progelec'));
+verify($ready['ready'] === true && $ready['major'] === 2 &&
+    strpos($ready['label'], 'v2.x') !== false,
+    'logiciel publié avec version enregistrée disponible');
+
+$no_version = slmms_manual_software_choice((object)array(
+    'ID' => 11, 'post_status' => 'publish', 'post_title' => 'OGIPEN'));
+verify($no_version['ready'] === false &&
+    strpos($no_version['label'], 'version non renseignée') !== false,
+    'logiciel sans version reste visible mais impossible à sélectionner');
+
+$draft = slmms_manual_software_choice((object)array(
+    'ID' => 10, 'post_status' => 'draft', 'post_title' => 'Progelec'));
+verify($draft['ready'] === false &&
+    strpos($draft['label'], 'à publier') !== false,
+    'logiciel en brouillon reste visible mais désactivé');
 
 $customer = get_userdata(5);
 verify(slmms_manual_license_validate($customer, 10, 2, array(20,21), 3, 365) === '',
