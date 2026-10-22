@@ -41,7 +41,18 @@ function slmms_validate_target($offer, $key, $owner_id) {
     if ($offer['mode'] === 'new') { return true; }
     if (!$owner_id) { return false; }
     $license = slmms_owned_license($key, $owner_id, $offer['software_id']);
-    return $license && in_array($license->status, array('active', 'expired'), true);
+    if (!$license || !in_array($license->status, array('active', 'expired'), true)) {
+        return false;
+    }
+    $source_major = (int)$license->major_version;
+    $target_major = (int)$offer['major'];
+    if ($offer['mode'] === 'upgrade') {
+        // Cannot buy a version change that leaves an expired license unusable.
+        $expired = strtotime($license->expires_utc . ' UTC') <= time();
+        return slmms_can_upgrade_major($source_major, $target_major) &&
+            (!$expired || (int)$offer['days'] > 0);
+    }
+    return slmms_same_major($source_major, $target_major);
 }
 
 function slmms_validate_add_to_cart($passed, $product_id, $quantity, $variation_id = 0, $cart_item_data = array()) {
@@ -119,6 +130,7 @@ function slmms_snapshot_order_item($item, $cart_item_key, $values, $order) {
     $o = $values['slmms_offer'];
     $item->add_meta_data('_slmms_mode', $o['mode'], true);
     $item->add_meta_data('_slmms_software', $o['software_id'], true);
+    $item->add_meta_data('_slmms_major', $o['major'], true);
     $item->add_meta_data('_slmms_modules', $o['modules'], true);
     $item->add_meta_data('_slmms_days', $o['days'], true);
     $item->add_meta_data('_slmms_seats', $o['seats'], true);
@@ -158,6 +170,7 @@ function slmms_apply_paid_item($order, $item_id, $item) {
     $ledger = slmms_table('ledger');
     $mode = $item->get_meta('_slmms_mode', true);
     $software = absint($item->get_meta('_slmms_software', true));
+    $target_major = absint($item->get_meta('_slmms_major', true));
     $days = absint($item->get_meta('_slmms_days', true));
     $seats = absint($item->get_meta('_slmms_seats', true));
     $modules = $item->get_meta('_slmms_modules', true);
@@ -165,8 +178,9 @@ function slmms_apply_paid_item($order, $item_id, $item) {
     $modules = array_values(array_unique(array_map('absint', $modules)));
     $target = (string) $item->get_meta('_slmms_target', true);
     $owner = (int) $order->get_user_id();
-    if (!in_array($mode, array('new', 'renew', 'modules', 'renew_modules', 'seats'), true) ||
+    if (!in_array($mode, array('new', 'renew', 'modules', 'renew_modules', 'seats', 'upgrade'), true) ||
         !$software || get_post_type($software) !== 'slm_software' ||
+        !slmms_major_is_sellable($software, $target_major) ||
         $seats > 100000 || $days > 36500 ||
         (in_array($mode, array('new', 'renew', 'renew_modules'), true) && !$days) ||
         (in_array($mode, array('new', 'seats'), true) && !$seats)) {
@@ -200,7 +214,8 @@ function slmms_apply_paid_item($order, $item_id, $item) {
             $expiry = $plan['expires_utc'];
             if ($wpdb->insert($licenses, array(
                 'license_key' => $license_key, 'owner_id' => $owner,
-                'software_id' => $software, 'seats' => $plan['seats'],
+                'software_id' => $software, 'major_version' => $target_major,
+                'seats' => $plan['seats'],
                 'modules_json' => wp_json_encode($plan['modules']),
                 'expires_utc' => $expiry, 'status' => 'active',
                 'created_utc' => $stamp, 'updated_utc' => $stamp
@@ -214,6 +229,17 @@ function slmms_apply_paid_item($order, $item_id, $item) {
             if (!$license || !in_array($license->status, array('active', 'expired'), true)) {
                 throw new RuntimeException('Licence cible introuvable ou non autorisée.');
             }
+            // Never let a v2 upgrade be replayed as v2->v2, even after
+            // concurrent callbacks or a stale shopping cart.
+            $source_major = (int)$license->major_version;
+            if ($mode === 'upgrade') {
+                if (!slmms_can_upgrade_major($source_major, $target_major) ||
+                    (strtotime($license->expires_utc . ' UTC') <= time() && !$days)) {
+                    throw new RuntimeException('Mise à niveau impossible : version source ou durée incorrecte.');
+                }
+            } elseif (!slmms_same_major($source_major, $target_major)) {
+                throw new RuntimeException('Version majeure non compatible avec cette licence.');
+            }
             $license_id = (int) $license->id;
             $plan = slmms_compute_entitlement($mode, (int)$license->seats,
                 slmms_modules($license), $license->expires_utc,
@@ -221,7 +247,11 @@ function slmms_apply_paid_item($order, $item_id, $item) {
             if ($wpdb->update($licenses, array(
                 'seats' => $plan['seats'],
                 'modules_json' => wp_json_encode($plan['modules']),
-                'expires_utc' => $plan['expires_utc'], 'updated_utc' => $stamp
+                'expires_utc' => $plan['expires_utc'],
+                'major_version' => $mode === 'upgrade' ? $target_major : $source_major,
+                'status' => ($days > 0 && in_array($mode, array('renew', 'renew_modules', 'upgrade'), true)) ?
+                    'active' : $license->status,
+                'updated_utc' => $stamp
             ), array('id' => $license_id)) === false) {
                 throw new RuntimeException('Mise à jour licence échouée.');
             }
