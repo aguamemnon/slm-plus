@@ -2,6 +2,7 @@
 // Isolated integration-style checks: fake WP identity, mailbox and transactional
 // SQL. Real WP/WooCommerce acceptance tests are still required before production.
 define('ABSPATH', __DIR__ . '/');
+define('SLMMS_TESTING', true);
 define('MINUTE_IN_SECONDS', 60);
 
 function add_action() {}
