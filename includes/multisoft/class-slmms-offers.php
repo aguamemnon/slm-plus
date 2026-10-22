@@ -41,7 +41,8 @@ function slmms_offers_page() {
         'renew' => 'Prolongation',
         'modules' => 'Modules supplémentaires',
         'renew_modules' => 'Prolongation et modules',
-        'seats' => 'Utilisateurs supplémentaires'
+        'seats' => 'Utilisateurs supplémentaires',
+        'upgrade' => 'Migration de version majeure'
     );
     echo '<table class="widefat striped"><thead><tr><th>Produit WooCommerce</th><th>Logiciel</th>' .
         '<th>Opération</th><th>Places</th><th>Durée (jours)</th><th>Configuration</th></tr></thead><tbody>';
