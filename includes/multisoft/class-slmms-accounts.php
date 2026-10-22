@@ -215,7 +215,7 @@ function slmms_user_form($license, $user, $admin) {
     foreach (array(
         'subject' => array('Compte unique', $user ? $user->subject : ''),
         'display_name' => array('Nom affiché', $user ? $user->display_name : ''),
-        'email' => array('Email facultatif', $user ? $user->email : '')
+        'email' => array('Email (obligatoire pour compte portail)', $user ? $user->email : '')
     ) as $name => $data) {
         echo '<input name="' . esc_attr($name) . '" aria-label="' . esc_attr($data[0]) .
             '" placeholder="' . esc_attr($data[0]) . '" maxlength="191" value="' .
@@ -329,7 +329,8 @@ function slmms_modify_user($license_id, $user_id, $delete, $actor) {
             $active = !empty($_POST['active']) ? 1 : 0;
             if (!in_array($provider, array('sam', 'ad', 'ogipen'), true) ||
                 !$subject || !$display ||
-                strlen($subject) > 191 || strlen($display) > 191) {
+                strlen($subject) > 191 || strlen($display) > 191 ||
+                ($provider === 'ogipen' && !is_email($email))) {
                 throw new RuntimeException('Identité invalide.');
             }
             // Even an administrator cannot quietly add active seats to a
