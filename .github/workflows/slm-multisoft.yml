@@ -50,7 +50,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Create installable test ZIP
         run: |
-          git archive --format=zip --prefix=slm-plus/ HEAD -o slm-plus-multisoft-test.zip
+          git archive --format=zip --prefix=slm-plus/ -o slm-plus-multisoft-test.zip HEAD slm-plus.php includes admin woocommerce public templates i18n index.php LICENSE.md readme.txt
       - uses: actions/upload-artifact@v4
         with:
           name: SLM-Plus-MultiSoftware-Test
