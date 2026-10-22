@@ -56,8 +56,7 @@ function slmms_software_list_columns($columns) {
         'title' => 'Logiciel',
         'slmms_version' => 'Version actuelle',
         'slmms_modules' => 'Modules associés',
-        'slmms_licenses' => 'Licences logicielles',
-        'date' => 'Date de modification'
+        'slmms_licenses' => 'Licences SLM Multi'
     );
 }
 
@@ -149,7 +148,7 @@ function slmms_software_metabox($post) {
         foreach ($modules as $module) {
             echo '<tr><td><a href="' . esc_url(get_edit_post_link($module->ID)) . '">' .
                 esc_html($module->post_title) . '</a></td><td>' .
-                esc_html($module->post_status) . '</td></tr>';
+                esc_html($module->post_status === 'publish' ? 'Publié' : 'Brouillon') . '</td></tr>';
         }
         echo '</tbody></table>';
     }
