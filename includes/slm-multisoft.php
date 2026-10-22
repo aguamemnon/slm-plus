@@ -5,12 +5,13 @@
  */
 if (!defined('ABSPATH')) { exit; }
 
-define('SLMMS_VERSION', '0.2.0');
+define('SLMMS_VERSION', '0.3.0');
 define('SLMMS_ROOT', __DIR__ . '/multisoft/');
 
 require_once SLMMS_ROOT . 'class-slmms-versions.php';
 require_once SLMMS_ROOT . 'class-slmms-plan.php';
 require_once SLMMS_ROOT . 'class-slmms-storage.php';
+require_once SLMMS_ROOT . 'class-slmms-managers.php';
 require_once SLMMS_ROOT . 'class-slmms-catalog.php';
 require_once SLMMS_ROOT . 'class-slmms-offers.php';
 require_once SLMMS_ROOT . 'class-slmms-overview.php';
