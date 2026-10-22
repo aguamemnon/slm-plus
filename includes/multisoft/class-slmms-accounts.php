@@ -80,7 +80,20 @@ function slmms_admin_page() {
     echo '</tbody></table>';
     if ($selected) {
         $license = slmms_license_for_id($selected, get_current_user_id());
-        if ($license) { slmms_render_license_users($license, true); }
+        if ($license) {
+            echo '<h3>Administration de la licence</h3>';
+            echo '<form method="post" action="' . esc_url(admin_url('admin-post.php')) . '">';
+            wp_nonce_field('slmms_status_' . $license->id);
+            echo '<input type="hidden" name="action" value="slmms_license_status" />' .
+                '<input type="hidden" name="license_id" value="' . esc_attr($license->id) . '" />';
+            echo '<select name="license_status">';
+            foreach (array('active' => 'Active', 'suspended' => 'Suspendue', 'blocked' => 'Bloquée') as $code => $label) {
+                echo '<option value="' . esc_attr($code) . '" ' .
+                    selected($license->status, $code, false) . '>' . esc_html($label) . '</option>';
+            }
+            echo '</select> <button class="button button-primary" type="submit">Enregistrer le statut</button></form>';
+            slmms_render_license_users($license, true);
+        }
     }
     echo '</div>';
 }
@@ -166,6 +179,32 @@ function slmms_user_form($license, $user, $admin) {
     }
 }
 
+add_action('admin_post_slmms_license_status', 'slmms_update_license_status');
+
+function slmms_update_license_status() {
+    if (!current_user_can('manage_options')) {
+        wp_die('Accès refusé', '', array('response' => 403));
+    }
+    $id = isset($_POST['license_id']) ? absint($_POST['license_id']) : 0;
+    check_admin_referer('slmms_status_' . $id);
+    $status = isset($_POST['license_status']) ?
+        sanitize_key(wp_unslash($_POST['license_status'])) : '';
+    if (!$id || !in_array($status, array('active', 'suspended', 'blocked'), true)) {
+        wp_die('Statut de licence invalide.', '', array('response' => 400));
+    }
+    global $wpdb;
+    $ok = $wpdb->update(slmms_table('license'), array(
+        'status' => $status,
+        'updated_utc' => gmdate('Y-m-d H:i:s')
+    ), array('id' => $id));
+    if ($ok === false) { wp_die('Mise à jour du statut impossible.'); }
+    wp_safe_redirect(add_query_arg(array(
+        'post_type' => 'slm_software', 'page' => 'slmms-licenses',
+        'license_id' => $id
+    ), admin_url('edit.php')));
+    exit;
+}
+
 add_action('admin_post_slmms_user_save', 'slmms_handle_user_action');
 add_action('admin_post_slmms_user_delete', 'slmms_handle_user_action');
 
@@ -189,51 +228,83 @@ function slmms_handle_user_action() {
 
 function slmms_modify_user($license_id, $user_id, $delete, $actor) {
     global $wpdb;
-    $license = slmms_license_for_id($license_id, $actor);
-    if (!$license) { return 'error'; }
-    $table = slmms_table('users');
-    if ($user_id) {
-        $current = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM $table WHERE id = %d AND license_id = %d", $user_id, $license_id
+    $license_table = slmms_table('license');
+    $user_table = slmms_table('users');
+    $is_admin = current_user_can('manage_options');
+    if ($wpdb->query('START TRANSACTION') === false) { return 'error'; }
+    try {
+        // Serialize seat allocation for all admins/customers of one license.
+        $license = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $license_table WHERE id = %d FOR UPDATE", $license_id
         ));
-        if (!$current) { return 'error'; }
+        if (!$license || (!$is_admin && (int)$license->owner_id !== (int)$actor)) {
+            throw new RuntimeException('Licence inaccessible.');
+        }
+        $current = null;
+        if ($user_id) {
+            $current = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM $user_table WHERE id = %d AND license_id = %d",
+                $user_id, $license_id
+            ));
+            if (!$current) { throw new RuntimeException('Utilisateur inconnu.'); }
+        }
+        if ($delete) {
+            if (!$current || $wpdb->delete($user_table, array(
+                'id' => $user_id, 'license_id' => $license_id
+            )) !== 1) {
+                throw new RuntimeException('Suppression refusée.');
+            }
+            $result = 'deleted';
+        } else {
+            $provider = isset($_POST['provider']) ?
+                sanitize_key(wp_unslash($_POST['provider'])) : '';
+            $subject = isset($_POST['subject']) ?
+                sanitize_text_field(wp_unslash($_POST['subject'])) : '';
+            $display = isset($_POST['display_name']) ?
+                sanitize_text_field(wp_unslash($_POST['display_name'])) : '';
+            $email = isset($_POST['email']) ?
+                sanitize_email(wp_unslash($_POST['email'])) : '';
+            $active = !empty($_POST['active']) ? 1 : 0;
+            if (!in_array($provider, array('sam', 'ad', 'ogipen'), true) ||
+                !$subject || !$display ||
+                strlen($subject) > 191 || strlen($display) > 191) {
+                throw new RuntimeException('Identité invalide.');
+            }
+            if ($active && !$is_admin && ($license->status !== 'active' ||
+                strtotime($license->expires_utc . ' UTC') <= time())) {
+                throw new RuntimeException('Licence expirée ou suspendue.');
+            }
+            $count = (int)$wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(*) FROM $user_table WHERE license_id = %d AND active = 1 AND id != %d",
+                $license_id, $user_id
+            ));
+            if ($active && $count >= (int)$license->seats) {
+                throw new RuntimeException('Nombre maximal de places atteint.');
+            }
+            $data = array(
+                'provider' => $provider, 'subject' => $subject,
+                'display_name' => $display, 'email' => $email, 'active' => $active,
+                'updated_utc' => gmdate('Y-m-d H:i:s')
+            );
+            if ($current) {
+                $ok = $wpdb->update($user_table, $data,
+                    array('id' => $user_id, 'license_id' => $license_id));
+            } else {
+                $data['license_id'] = $license_id;
+                $data['created_utc'] = gmdate('Y-m-d H:i:s');
+                $ok = $wpdb->insert($user_table, $data);
+            }
+            if ($ok === false) {
+                throw new RuntimeException('Identité déjà déclarée ou base indisponible.');
+            }
+            $result = 'saved';
+        }
+        if ($wpdb->query('COMMIT') === false) {
+            throw new RuntimeException('Commit impossible.');
+        }
+        return $result;
+    } catch (Throwable $e) {
+        $wpdb->query('ROLLBACK');
+        return 'error';
     }
-    if ($delete) {
-        if (!$user_id) { return 'error'; }
-        return $wpdb->delete($table, array('id' => $user_id, 'license_id' => $license_id)) === 1
-            ? 'deleted' : 'error';
-    }
-
-    $provider = isset($_POST['provider']) ? sanitize_key(wp_unslash($_POST['provider'])) : '';
-    $subject = isset($_POST['subject']) ?
-        sanitize_text_field(wp_unslash($_POST['subject'])) : '';
-    $display = isset($_POST['display_name']) ?
-        sanitize_text_field(wp_unslash($_POST['display_name'])) : '';
-    $email = isset($_POST['email']) ? sanitize_email(wp_unslash($_POST['email'])) : '';
-    $active = !empty($_POST['active']) ? 1 : 0;
-    if (!in_array($provider, array('sam', 'ad', 'ogipen'), true) ||
-        !$subject || !$display ||
-        strlen($subject) > 191 || strlen($display) > 191) { return 'error'; }
-
-    if ($active && !current_user_can('manage_options') &&
-        ($license->status !== 'active' ||
-         strtotime($license->expires_utc . ' UTC') <= time())) { return 'error'; }
-
-    $count = (int)$wpdb->get_var($wpdb->prepare(
-        "SELECT COUNT(*) FROM $table WHERE license_id = %d AND active = 1 AND id != %d",
-        $license_id, $user_id
-    ));
-    if ($active && $count >= (int)$license->seats) { return 'error'; }
-    $data = array('provider' => $provider, 'subject' => $subject,
-        'display_name' => $display, 'email' => $email, 'active' => $active,
-        'updated_utc' => gmdate('Y-m-d H:i:s'));
-    if ($user_id) {
-        $done = $wpdb->update($table, $data,
-            array('id' => $user_id, 'license_id' => $license_id));
-    } else {
-        $data['license_id'] = $license_id;
-        $data['created_utc'] = gmdate('Y-m-d H:i:s');
-        $done = $wpdb->insert($table, $data);
-    }
-    return $done === false ? 'error' : 'saved';
 }
