@@ -87,6 +87,7 @@ function slmms_admin_page() {
             echo '</select> <button class="button button-primary" type="submit">Enregistrer le statut</button></form>';
             slmms_render_license_users($license, true);
             slmms_manager_panel($license, true);
+        slmms_offline_panel($license, true);
         }
     }
     echo '</div>';
