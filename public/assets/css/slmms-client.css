@@ -1,0 +1,44 @@
+/* SLM Plus Multi-Software - WooCommerce "Mon compte" licences */
+.slmms-client-dashboard{--slmms-border:#dbe2e9;--slmms-muted:#526071;--slmms-ink:#182a40;color:var(--slmms-ink);max-width:1200px}
+.slmms-client-dashboard *{box-sizing:border-box}
+.slmms-client-heading h2{font-size:1.55rem;margin:.1em 0 .2em}
+.slmms-client-heading p{color:var(--slmms-muted);margin:0 0 1.1em}
+.slmms-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:20px 0 25px}
+.slmms-stat{background:#f6f9fd;border:1px solid var(--slmms-border);border-radius:8px;padding:16px}
+.slmms-stat span{display:block;color:var(--slmms-muted);font-size:.88rem;margin-bottom:8px}
+.slmms-stat strong{display:block;font-size:1.55rem;line-height:1.1}
+.slmms-section-heading{font-size:1.15rem;margin:1.5em 0 .6em}
+.slmms-license-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.slmms-license-tile{border:1px solid var(--slmms-border);border-radius:10px;padding:18px;background:#fff;min-width:0;box-shadow:0 2px 7px rgba(12,39,73,.04)}
+.slmms-license-tile.is-selected{border-color:#1d669e;box-shadow:0 0 0 1px #1d669e}
+.slmms-tile-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.slmms-tile-heading h4{margin:0;font-size:1.15rem;overflow-wrap:anywhere}
+.slmms-license-tile p{margin:.55em 0;font-size:.93rem;overflow-wrap:anywhere}
+.slmms-license-tile .slmms-tile-meta{color:var(--slmms-muted)}
+.slmms-license-tile .slmms-small{font-size:.8rem;color:var(--slmms-muted);margin-bottom:1em}
+.slmms-status{display:inline-block;border-radius:99px;padding:3px 9px;font-size:.78rem;font-weight:650;line-height:1.5;white-space:nowrap}
+.slmms-status--success{background:#e7f5eb;color:#145c2e}
+.slmms-status--warning{background:#fff3d1;color:#765006}
+.slmms-status--danger{background:#fce7e7;color:#942727}
+.slmms-link-button{display:inline-block;border:1px solid #17669c;border-radius:6px;background:#17669c;color:white!important;font-size:.88rem;padding:8px 13px;text-decoration:none!important}
+.slmms-link-button:hover,.slmms-link-button:focus{background:#124e76;color:white!important}
+.slmms-empty{border:1px dashed var(--slmms-border);border-radius:8px;padding:20px}
+.slmms-empty h3{margin:.15em 0}
+.slmms-license-detail{border:1px solid var(--slmms-border);border-radius:10px;padding:20px;background:white;margin-top:22px;overflow-wrap:anywhere}
+.slmms-detail-heading{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.slmms-detail-heading h3{margin:0 0 4px}
+.slmms-detail-heading p{font-size:.85rem;color:var(--slmms-muted);margin:0}
+.slmms-back-link{font-size:.85rem}
+.slmms-detail-tabs{display:flex;flex-wrap:wrap;gap:4px;border-bottom:1px solid var(--slmms-border);margin:20px 0;padding:0}
+.slmms-detail-tabs a{padding:10px 13px;border-bottom:3px solid transparent;text-decoration:none!important}
+.slmms-detail-tabs a.is-current{color:#105e93;border-bottom-color:#17669c;font-weight:700}
+.slmms-license-summary dl{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.slmms-license-summary dl>div{padding:12px;background:#f7f9fb;border-radius:5px}
+.slmms-license-summary dt{font-size:.83rem;color:var(--slmms-muted)}
+.slmms-license-summary dd{font-weight:650;margin:4px 0 0}
+.slmms-warning{padding:12px;border-left:4px solid #d19c10;background:#fff8e3}
+.slmms-detail-cta{margin:18px 0 0}
+.slmms-client-dashboard .shop_table{width:100%;display:block;overflow-x:auto}
+.slmms-client-dashboard form input[type="text"],.slmms-client-dashboard form input[type="email"]{max-width:100%;min-width:110px}
+@media(max-width:1050px){.slmms-stats{grid-template-columns:repeat(2,minmax(0,1fr))}.slmms-license-grid{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:600px){.slmms-license-detail{padding:12px}.slmms-stats{gap:8px}.slmms-stat{padding:12px}.slmms-detail-heading{flex-direction:column}.slmms-tile-heading{flex-direction:column}.slmms-license-summary dl{grid-template-columns:1fr}}
