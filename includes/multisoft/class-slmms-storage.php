@@ -4,7 +4,7 @@ if (!defined('ABSPATH')) { exit; }
 /** Separate fork tables; never alter SLM Plus legacy primary/foreign keys. */
 function slmms_table($name) {
     global $wpdb;
-    $names = array('license' => 'slmms_licenses', 'users' => 'slmms_users', 'ledger' => 'slmms_order_items', 'managers' => 'slmms_managers', 'audit' => 'slmms_audit', 'manual_requests' => 'slmms_manual_requests');
+    $names = array('license' => 'slmms_licenses', 'users' => 'slmms_users', 'ledger' => 'slmms_order_items', 'managers' => 'slmms_managers', 'audit' => 'slmms_audit', 'manual_requests' => 'slmms_manual_requests', 'offline' => 'slmms_offline_activations');
     if (!isset($names[$name])) { throw new InvalidArgumentException('Unknown table'); }
     return $wpdb->prefix . $names[$name];
 }
@@ -19,6 +19,7 @@ function slmms_install_schema() {
     $managers = slmms_table('managers');
     $audit = slmms_table('audit');
     $manual_requests = slmms_table('manual_requests');
+    $offline = slmms_table('offline');
 
     dbDelta("CREATE TABLE $licenses (
         id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
@@ -107,6 +108,19 @@ function slmms_install_schema() {
         created_utc datetime NOT NULL,
         PRIMARY KEY  (id),
         UNIQUE KEY request_key (request_key),
+        KEY license_id (license_id)
+    ) $charset;");
+    dbDelta("CREATE TABLE $offline (
+        id bigint(20) unsigned NOT NULL AUTO_INCREMENT,
+        license_id bigint(20) unsigned NOT NULL,
+        beneficiary_id bigint(20) unsigned NOT NULL,
+        device_sha256 varchar(64) NOT NULL,
+        expires_utc datetime NOT NULL,
+        issued_utc datetime NOT NULL,
+        actor_user_id bigint(20) unsigned NOT NULL,
+        revoked tinyint(1) NOT NULL DEFAULT 0,
+        PRIMARY KEY  (id),
+        UNIQUE KEY license_beneficiary (license_id,beneficiary_id),
         KEY license_id (license_id)
     ) $charset;");
     update_option('slmms_schema_version', SLMMS_VERSION);
