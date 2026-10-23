@@ -32,50 +32,9 @@ function slmms_account_url($license_id = 0) {
 
 function slmms_account_page() {
     if (!is_user_logged_in()) { return; }
-    global $wpdb;
-    $table = slmms_table('license');
-    $owner = get_current_user_id();
-    $licenses = slmms_licenses_for_actor($owner);
-    echo '<h2>Mes logiciels et licences</h2>';
-    if (!$licenses) {
-        echo '<p>Aucune licence multi-logiciels associée à ce compte.</p>';
-        return;
-    }
-    $selected = isset($_GET['slmms_license']) ? absint($_GET['slmms_license']) : 0;
-    echo '<table class="shop_table"><thead><tr><th>Client</th><th>Logiciel</th><th>Version</th><th>Licence</th><th>Utilisateurs</th><th>Modules</th><th>Expiration UTC</th><th>Actions</th></tr></thead><tbody>';
-    foreach ($licenses as $license) {
-        $owner_user = get_userdata($license->owner_id);
-        $license_owner = $owner_user ? $owner_user->display_name : 'Compte #' . $license->owner_id;
-        $beneficiaries = slmms_table('users');
-        $active = (int)$wpdb->get_var($wpdb->prepare(
-            "SELECT COUNT(*) FROM $beneficiaries WHERE license_id = %d AND active = 1", $license->id
-        ));
-        $modules = array();
-        foreach (slmms_modules($license) as $module_id) {
-            if (get_post_type($module_id) === 'slm_module') {
-                $modules[] = get_the_title($module_id);
-            }
-        }
-        echo '<tr><td>' . esc_html($license_owner) .
-            '</td><td>' . esc_html(get_the_title($license->software_id)) .
-            '</td><td>' . esc_html((int)$license->major_version > 0 ?
-                'v' . $license->major_version . '.x' : 'Version non attribuée') .
-            '</td><td><code>' . esc_html($license->license_key) .
-            '</code></td><td>' . esc_html($active . '/' . $license->seats) .
-            '</td><td>' . esc_html($modules ? implode(', ', $modules) : '—') .
-            '</td><td>' . esc_html($license->expires_utc) .
-            '</td><td><a href="' . esc_url(slmms_account_url($license->id)) .
-            '">' . esc_html(slmms_actor_can($license, $owner, 'manage_users') ?
-                'Gérer les utilisateurs' : 'Consulter') . '</a></td></tr>';
-    }
-    echo '</tbody></table>';
-    if ($selected) {
-        $license = slmms_license_for_id($selected, $owner);
-        if ($license) {
-            slmms_render_license_users($license, false);
-            slmms_manager_panel($license, false);
-        }
-    }
+    $actor = get_current_user_id();
+    $licenses = slmms_licenses_for_actor($actor);
+    slmms_customer_licenses_dashboard($licenses, $actor);
 }
 
 function slmms_admin_menu() {
