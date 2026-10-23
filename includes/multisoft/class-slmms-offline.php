@@ -264,6 +264,7 @@ function slmms_offline_panel($license, $admin = false) {
             echo '<input type="hidden" name="action" value="slmms_offline_revoke" />' .
                 '<input type="hidden" name="license_id" value="' . esc_attr($license->id) . '" />' .
                 '<input type="hidden" name="activation_id" value="' . esc_attr($record->id) . '" />' .
+                '<input type="hidden" name="return_admin" value="' . ($admin ? '1' : '0') . '" />' .
                 '<button type="submit" class="button">Révoquer l’activation dans le portail</button></form>';
         }
     }
@@ -319,11 +320,23 @@ function slmms_handle_offline_revoke() {
         $activation_id, $license_id
     ));
     if (!$record) { wp_die('Activation introuvable.', '', array('response' => 404)); }
-    $wpdb->update(slmms_table('offline'), array('revoked' => 1),
+    if ($wpdb->query('START TRANSACTION') === false) {
+        wp_die('Base indisponible.', '', array('response' => 503));
+    }
+    $ok = $wpdb->update(slmms_table('offline'), array('revoked' => 1),
         array('id' => $activation_id, 'license_id' => $license_id));
-    slmms_audit($license->owner_id, get_current_user_id(), $license_id,
-        'offline_revoked', $record->beneficiary_id);
-    wp_safe_redirect(slmms_account_url($license_id));
+    if ($ok === false ||
+        !slmms_audit($license->owner_id, get_current_user_id(), $license_id,
+            'offline_revoked', $record->beneficiary_id) ||
+        $wpdb->query('COMMIT') === false) {
+        $wpdb->query('ROLLBACK');
+        wp_die('Révocation non enregistrée.', '', array('response' => 503));
+    }
+    $admin = current_user_can('manage_options') && !empty($_POST['return_admin']);
+    $back = $admin ?
+        add_query_arg(array('page' => 'slmms-licenses', 'license_id' => $license_id),
+            admin_url('admin.php')) : slmms_account_url($license_id);
+    wp_safe_redirect($back);
     exit;
 }
 
