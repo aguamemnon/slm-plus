@@ -17,12 +17,12 @@ Contenu `application/json` :
 Réponse 200 **uniquement si tous les contrôles réussissent** :
 
 ```json
-{"token":"BASE64URL.HEADER.BASE64URL.PAYLOAD.BASE64URL.SIGNATURE",
+{"token":"BASE64URL_HEADER.BASE64URL_PAYLOAD.BASE64URL_SIGNATURE_DER",
  "expires_at":1790000000,"key_id":"identifiant-public","valid_for_seconds":3600}
 ```
 
-Le jeton a **trois segments**, pas quatre ; la ligne d'exemple ci-dessus
-illustre les éléments du jeton et non une valeur réelle.
+Le jeton a **trois segments** encodés en base64url ; les noms ci-dessus
+ne sont que des repères, pas une vraie signature.
 
 La méthode utilise l'authentification WordPress individuelle (via
 **Application Passwords** en HTTPS lors des tests API, ou session WordPress
