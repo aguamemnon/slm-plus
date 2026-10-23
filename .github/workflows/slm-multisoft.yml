@@ -50,6 +50,7 @@ jobs:
           php -l tests/multisoft/product-types.php
           php -l tests/multisoft/account-endpoints.php
           php -l tests/multisoft/client-dashboard.php
+          php -l tests/multisoft/signed-entitlements.php
       - name: Licensing behavior checks
         run: |
           php tests/multisoft/license-plan.php
@@ -61,6 +62,7 @@ jobs:
           php tests/multisoft/product-types.php
           php tests/multisoft/account-endpoints.php
           php tests/multisoft/client-dashboard.php
+          php tests/multisoft/signed-entitlements.php
 
   package:
     name: WordPress test plugin ZIP
