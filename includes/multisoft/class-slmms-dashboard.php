@@ -201,6 +201,7 @@ function slmms_customer_license_detail($license, $actor_id, $tab, $occupied) {
                 esc_html($value) . '</dd></div>';
         }
         echo '</dl></div>';
+        if ($can_users) { slmms_offline_panel($license, false); }
         if ($health['tone'] !== 'success') {
             echo '<p class="slmms-warning" role="status">Cette licence nécessite ' .
                 'une attention. Une licence expirée ou suspendue ne doit pas autoriser ' .
