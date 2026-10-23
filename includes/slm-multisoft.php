@@ -5,7 +5,7 @@
  */
 if (!defined('ABSPATH')) { exit; }
 
-define('SLMMS_VERSION', '0.6.0');
+define('SLMMS_VERSION', '0.7.0');
 define('SLMMS_ROOT', __DIR__ . '/multisoft/');
 
 require_once SLMMS_ROOT . 'class-slmms-versions.php';
@@ -23,6 +23,7 @@ require_once SLMMS_ROOT . 'class-slmms-woocommerce.php';
 require_once SLMMS_ROOT . 'class-slmms-accounts.php';
 require_once SLMMS_ROOT . 'class-slmms-dashboard.php';
 require_once SLMMS_ROOT . 'class-slmms-entitlements.php';
+require_once SLMMS_ROOT . 'class-slmms-offline.php';
 
 register_activation_hook(SLM_PATH . 'slm-plus.php', 'slmms_activate_multisoftware');
 add_action('admin_init', 'slmms_maybe_refresh_account_endpoints', 40);
