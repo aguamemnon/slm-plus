@@ -22,6 +22,7 @@ require_once SLMMS_ROOT . 'class-slmms-manual.php';
 require_once SLMMS_ROOT . 'class-slmms-woocommerce.php';
 require_once SLMMS_ROOT . 'class-slmms-accounts.php';
 require_once SLMMS_ROOT . 'class-slmms-dashboard.php';
+require_once SLMMS_ROOT . 'class-slmms-entitlements.php';
 
 register_activation_hook(SLM_PATH . 'slm-plus.php', 'slmms_activate_multisoftware');
 add_action('admin_init', 'slmms_maybe_refresh_account_endpoints', 40);
@@ -32,6 +33,7 @@ function slmms_activate_multisoftware() {
 }
 add_action('admin_init', 'slmms_maybe_upgrade_schema');
 add_action('init', 'slmms_register_catalog');
+add_action('rest_api_init', 'slmms_register_entitlements_api');
 add_action('add_meta_boxes', 'slmms_add_catalog_metaboxes');
 add_action('save_post_slm_module', 'slmms_save_module', 10, 2);
 add_action('save_post_slm_software', 'slmms_save_software', 10, 2);
