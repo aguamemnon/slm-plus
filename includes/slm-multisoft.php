@@ -14,12 +14,14 @@ require_once SLMMS_ROOT . 'class-slmms-storage.php';
 require_once SLMMS_ROOT . 'class-slmms-managers.php';
 require_once SLMMS_ROOT . 'class-slmms-identities.php';
 require_once SLMMS_ROOT . 'class-slmms-endpoints.php';
+require_once SLMMS_ROOT . 'class-slmms-customer-cache.php';
 require_once SLMMS_ROOT . 'class-slmms-catalog.php';
 require_once SLMMS_ROOT . 'class-slmms-offers.php';
 require_once SLMMS_ROOT . 'class-slmms-overview.php';
 require_once SLMMS_ROOT . 'class-slmms-manual.php';
 require_once SLMMS_ROOT . 'class-slmms-woocommerce.php';
 require_once SLMMS_ROOT . 'class-slmms-accounts.php';
+require_once SLMMS_ROOT . 'class-slmms-dashboard.php';
 
 register_activation_hook(SLM_PATH . 'slm-plus.php', 'slmms_activate_multisoftware');
 add_action('admin_init', 'slmms_maybe_refresh_account_endpoints', 40);
@@ -47,4 +49,6 @@ function slmms_boot_woocommerce() {
     slmms_register_woocommerce_hooks();
     slmms_register_account_hooks();
     slmms_register_identity_hooks();
+    add_action('template_redirect', 'slmms_customer_nocache', 0);
+    add_action('wp_enqueue_scripts', 'slmms_enqueue_customer_styles');
 }
